@@ -1,0 +1,92 @@
+function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL)
+    % Настройка конфигурации для STA
+    cfgSTABase = heRangingConfig;
+    cfgSTABase.ChannelBandwidth = chanBW;
+    cfgSTABase.NumTransmitAntennas = numTx;
+    cfgSTABase.SecureHELTF = true;
+    cfgSTABase.User{1}.NumSpaceTimeStreams = numSTS;
+    cfgSTABase.User{1}.NumHELTFRepetitions = numLTFRepetitions;
+
+    % Настройка конфигурации для AP
+    cfgAPBase = cell(1, numAPs);
+    for iAP = 1:numAPs
+        cfgAPBase{iAP} = heRangingConfig;
+        cfgAPBase{iAP}.ChannelBandwidth = chanBW;
+        cfgAPBase{iAP}.NumTransmitAntennas = numTx;
+        cfgAPBase{iAP}.SecureHELTF = true;
+        cfgAPBase{iAP}.User{1}.NumSpaceTimeStreams = numSTS;
+        cfgAPBase{iAP}.User{1}.NumHELTFRepetitions = numLTFRepetitions;
+    end
+
+    % Настройка канала
+    chanBase = wlanTGaxChannel;
+    chanBase.DelayProfile = delayProfile;
+    chanBase.NumTransmitAntennas = numTx;
+    chanBase.NumReceiveAntennas = numRx;
+    chanBase.SampleRate = wlanSampleRate(chanBW);
+    chanBase.CarrierFrequency = carrierFrequency;
+    chanBase.PathGainsOutputPort = true;
+    chanBase.NormalizeChannelOutputs = false;
+
+    % Инициализация массивов для хранения результатов
+    numSNR = numel(snrRange);
+    distEst = zeros(numAPs, numIterations, numSNR);
+    distance = zeros(numAPs, numIterations, numSNR);
+    positionSTA = zeros(2, numIterations, numSNR);
+    positionAP = zeros(2, numAPs, numIterations, numSNR);
+    per = zeros(numSNR, 1);
+
+        
+
+
+% Исправленный вызов функции wlanHEOFDMInfo
+ofdmInfo = wlanHEOFDMInfo('HE-LTF',chanBW,cfgSTABase.GuardInterval);
+sampleRate = wlanSampleRate(chanBW);
+
+% Пример дальнейшего использования
+snrVal = snrRange(isnr) - 10*log10(ofdmInfo.FFTLength / ofdmInfo.NumTones);
+        for iter = 1:numIterations
+            % Генерация позиций STA и AP
+            [positionSTA(:, iter, isnr), positionAP(:, :, iter, isnr), distanceAllAPs] = heGeneratePositions(numAPs);
+            distance(:, iter, isnr) = distanceAllAPs;
+
+            % Симуляция для каждой AP
+            for iAP = 1:numAPs
+                % Генерация сигналов UL и DL (заглушка, требует реализации)
+                txWaveformUL = generateWaveform(cfgSTABase);
+                txWaveformDL = generateWaveform(cfgAPBase{iAP});
+
+                % Прохождение сигнала через канал
+                rxWaveformUL = chanBase(txWaveformUL);
+                rxWaveformDL = chanBase(txWaveformDL);
+
+                % Добавление шума
+                rxWaveformUL = awgn(rxWaveformUL, snrVal, 'measured');
+                rxWaveformDL = awgn(rxWaveformDL, snrVal, 'measured');
+
+                % Оценка ToA и RTT (заглушка, требует реализации)
+                toaUL = estimateToA(rxWaveformUL);
+                toaDL = estimateToA(rxWaveformDL);
+                rtt = (toaDL - toaUL - delayULDL) * 3e8 / 2; % Скорость света для расстояния
+                distEst(iAP, iter, isnr) = rtt;
+            end
+
+            % Трилатерация для оценки позиции STA (заглушка, требует реализации)
+            positionSTA(:, iter, isnr) = trilaterate(positionAP(:, :, iter, isnr), distEst(:, iter, isnr));
+        end
+
+        % Вычисление ошибок (MAE и PER)
+        mae = mean(abs(distEst(:, :, isnr) - distance(:, :, isnr)), 'all');
+        per(isnr) = mean(any(distEst(:, :, isnr) == 0, 1));
+    end
+
+    % Построение CDF для ошибок
+    figure;
+    hePlotErrorCDF(abs(distEst(:) - distance(:)), 'Distance Error CDF');
+    title('CDF ошибок расстояний');
+
+    % Отображение результатов трилатерации
+    figure;
+    hePlotTrilaterationCircles(positionSTA(:,:,1), positionAP(:,:,:,1), distEst(:,:,1));
+    title('Пример трилатерации для SNR = ' + string(snrRange(1)));
+end
