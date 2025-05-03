@@ -1,4 +1,4 @@
-function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL)
+function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic)
     % Добавляем папку libs и текущую директорию в путь поиска
     addpath('libs');
     currentFolder = fileparts(mfilename('fullpath'));
@@ -60,6 +60,13 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
         end
     end
 
+    % Определяем строку метода для лейблов
+   if useMusic
+        methodStr = 'MUSIC';
+    else
+        methodStr = 'No MUSIC';
+   end
+
     parfor isnr = 1:numSNR
         chan = chanBase;
         cfgAP = cfgAPBase;
@@ -107,8 +114,13 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
                     [chanEstActiveSC, integerOffset] = heRangingSynchronize(rx, cfg);
 
                     if ~isempty(chanEstActiveSC)
-                        fracDelay = heRangingTOAEstimate(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
-                                                         ofdmInfo.FFTLength, sampleRate, numPaths);
+                        if useMusic
+                            fracDelay = heRangingTOAEstimate(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
+                                                             ofdmInfo.FFTLength, sampleRate, numPaths);
+                        else
+                            fracDelay = heRangingTOAEstimateWithoutMusic(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
+                                                                         ofdmInfo.FFTLength, sampleRate);
+                        end
                         integerOffset = integerOffset - chDelay;
                         intDelay = integerOffset/sampleRate;
                         txTime(l) = intDelay + fracDelay;
@@ -138,20 +150,20 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
         if per(isnr) > 0.01
             warning('wlan:discardPacket', 'At SNR = %d dB, %d%% of packets were discarded', snrRange(isnr), 100*per(isnr));
         end
-        disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, ', 'Ranging mean absolute error = ', num2str(mae), ' meters.'])
+        disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, Method: ', methodStr, ', Ranging mean absolute error = ', num2str(mae), ' meters.'])
     end
 
     % Построение CDF ошибок расстояний
-    rangingError = abs(distance - distEst);
-    rangingError = reshape(rangingError(~isnan(rangingError)), [], numSNR);
-    if ~isempty(rangingError)
-        figure('Name', 'Ranging Error CDF');
-        hePlotErrorCDF(rangingError, snrRange);
-        xlabel('Absolute ranging error (meters)');
-        title('Ranging Error CDF');
-    else
-        disp('No valid ranging error data for CDF plot.');
-    end
+    % rangingError = abs(distance - distEst);
+    % validRangingError = rangingError(~isnan(rangingError));
+    % if ~isempty(validRangingError)
+    %     figure('Name', ['Ranging Error CDF - Method: ', methodStr]);
+    %     hePlotErrorCDF(validRangingError, snrRange, methodStr);
+    %     xlabel('Absolute ranging error (meters)');
+    %     title(['Ranging Error CDF - Method: ', methodStr]);
+    % else
+    %     disp(['No valid ranging error data for CDF plot - Method: ', methodStr]);
+    % end
 
     % Trilateration
     positionSTAEst = nan(2, numIterations, numSNR);
@@ -167,38 +179,48 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
         validRMSE = validRMSE(~isnan(validRMSE));
         if ~isempty(validRMSE)
             posEr = mean(validRMSE);
-            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, Average RMS Positioning error = ', num2str(posEr), ' meters.'])
+            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, Method: ', methodStr, ', Average RMS Positioning error = ', num2str(posEr), ' meters.'])
         else
-            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, No valid positioning data.'])
+            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, No valid positioning data - Method: ', methodStr]);
         end
     end
 
     % Построение CDF ошибок позиционирования
     % validRMSE = RMSE(~isnan(RMSE(:)));
     % if ~isempty(validRMSE)
-    %     figure('Name', 'Positioning Error CDF');
-    %     hePlotErrorCDF(validRMSE, snrRange);
+    %     figure('Name', ['Positioning Error CDF - Method: ', methodStr]);
+    %     hePlotErrorCDF(validRMSE, snrRange, methodStr);
     %     xlabel('RMS positioning error (meters)');
-    %     title('Positioning Error CDF');
+    %     title(['Positioning Error CDF - Method: ', methodStr]);
     % else
-    %     disp('No valid positioning error data for CDF plot.');
+    %     disp(['No valid positioning error data for CDF plot - Method: ', methodStr]);
     % end
 
     % Построение трилатерационных кругов для каждого SNR
     for isnr = 1:numSNR
         validIter = find(sum(~isnan(distEst(:, :, isnr)), 1) >= 3, 1, 'last');
         if ~isempty(validIter)
-            figure('Name', ['Trilateration Circles for SNR ', num2str(snrRange(isnr)), ' dB']);
+            figure('Name', ['Trilateration Circles - Method: ', methodStr, ' for SNR ', num2str(snrRange(isnr)), ' dB']);
             hePlotTrilaterationCircles(squeeze(positionAP(:, :, validIter, isnr)), ...
                                        squeeze(positionSTAEst(:, validIter, isnr)), ...
                                        squeeze(distEst(:, validIter, isnr)), ...
                                        snrRange(isnr), validIter);
         else
-            disp(['No valid trilateration data for SNR ', num2str(snrRange(isnr)), ' dB']);
+            disp(['No valid trilateration data for SNR ', num2str(snrRange(isnr)), ' dB - Method: ', methodStr]);
         end
     end
 
     % Удаляем путь после выполнения
     rmpath('libs');
     rmpath(currentFolder);
+end
+
+% Альтернативная оценка ToA без MUSIC
+function fracDelay = heRangingTOAEstimateWithoutMusic(chanEstActiveSC, activeFFTIndices, fftLength, sampleRate)
+    chanEstMean = mean(chanEstActiveSC, [2, 3]);
+    chanEstFull = zeros(fftLength, 1);
+    chanEstFull(activeFFTIndices) = chanEstMean;
+    impulseResponse = ifft(ifftshift(chanEstFull));
+    [~, idx] = max(abs(impulseResponse));
+    fracDelay = (idx - 1) / sampleRate;
 end

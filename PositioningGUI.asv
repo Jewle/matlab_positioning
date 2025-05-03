@@ -64,7 +64,7 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % SNR Range
             app.SNRRangeLabel = uilabel(app.UIFigure, 'Position', [50 440 120 22], 'Text', 'SNR Range (dB)');
-            app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '8:2:14');
+            app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '8:5:45');
 
             % Number of APs
             app.NumAPsLabel = uilabel(app.UIFigure, 'Position', [50 410 120 22], 'Text', 'Number of APs');
@@ -72,7 +72,7 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % Channel Bandwidth
             app.ChanBWLabel = uilabel(app.UIFigure, 'Position', [50 380 120 22], 'Text', 'Channel Bandwidth');
-            app.ChanBWDropDown = uidropdown(app.UIFigure, 'Position', [180 380 100 22], 'Items', {'CBW20', 'CBW40', 'CBW80', 'CBW160'}, 'Value', 'CBW20');
+            app.ChanBWDropDown = uidropdown(app.UIFigure, 'Position', [180 380 100 22], 'Items', {'CBW20', 'CBW40', 'CBW80', 'CBW160'}, 'Value', 'CBW80');
 
             % Number of Tx Antennas
             app.NumTxLabel = uilabel(app.UIFigure, 'Position', [50 350 120 22], 'Text', 'Num Tx Antennas');
@@ -96,7 +96,7 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % Carrier Frequency
             app.CarrierFrequencyLabel = uilabel(app.UIFigure, 'Position', [50 200 120 22], 'Text', 'Carrier Frequency (Hz)');
-            app.CarrierFrequencyEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 200 100 22], 'Value', 2.4e9);
+            app.CarrierFrequencyEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 200 100 22], 'Value', 5.25e9);
 
             % Delay UL-DL
             app.DelayULDLLabel = uilabel(app.UIFigure, 'Position', [50 170 120 22], 'Text', 'Delay UL-DL (s)');
