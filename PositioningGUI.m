@@ -73,7 +73,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             % Create NumIterationsEditField
             app.NumIterationsEditField = uieditfield(app.UIFigure, 'numeric');
             app.NumIterationsEditField.Position = [160 430 100 22];
-            app.NumIterationsEditField.Value = 50;
+            app.NumIterationsEditField.Value = 5;
 
             % Create SNRRangeLabel
             app.SNRRangeLabel = uilabel(app.UIFigure);
@@ -84,7 +84,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             % Create SNRRangeEditField
             app.SNRRangeEditField = uieditfield(app.UIFigure, 'text');
             app.SNRRangeEditField.Position = [160 400 100 22];
-            app.SNRRangeEditField.Value = '15:10:35';
+            app.SNRRangeEditField.Value = '8:4:16';
 
             % Create NumAPsLabel
             app.NumAPsLabel = uilabel(app.UIFigure);
@@ -118,7 +118,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             % Create NumTxEditField
             app.NumTxEditField = uieditfield(app.UIFigure, 'numeric');
             app.NumTxEditField.Position = [160 310 100 22];
-            app.NumTxEditField.Value = 1;
+            app.NumTxEditField.Value = 2;
 
             % Create NumRxLabel
             app.NumRxLabel = uilabel(app.UIFigure);
@@ -129,7 +129,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             % Create NumRxEditField
             app.NumRxEditField = uieditfield(app.UIFigure, 'numeric');
             app.NumRxEditField.Position = [160 280 100 22];
-            app.NumRxEditField.Value = 1;
+            app.NumRxEditField.Value = 2;
 
             % Create NumSTSLabel
             app.NumSTSLabel = uilabel(app.UIFigure);
@@ -140,7 +140,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             % Create NumSTSEditField
             app.NumSTSEditField = uieditfield(app.UIFigure, 'numeric');
             app.NumSTSEditField.Position = [160 250 100 22];
-            app.NumSTSEditField.Value = 1;
+            app.NumSTSEditField.Value = 2;
 
             % Create NumLTFRepetitionsLabel
             app.NumLTFRepetitionsLabel = uilabel(app.UIFigure);
@@ -163,7 +163,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             app.DelayProfileDropDown = uidropdown(app.UIFigure);
             app.DelayProfileDropDown.Items = {'Model-A', 'Model-B', 'Model-C', 'Model-D', 'Model-E'};
             app.DelayProfileDropDown.Position = [160 190 100 22];
-            app.DelayProfileDropDown.Value = 'Model-B';
+            app.DelayProfileDropDown.Value = 'Model-E';
 
             % Create CarrierFrequencyLabel
             app.CarrierFrequencyLabel = uilabel(app.UIFigure);
@@ -174,7 +174,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             % Create CarrierFrequencyEditField
             app.CarrierFrequencyEditField = uieditfield(app.UIFigure, 'numeric');
             app.CarrierFrequencyEditField.Position = [180 160 100 22];
-            app.CarrierFrequencyEditField.Value = 5e9;
+            app.CarrierFrequencyEditField.Value = 2.4e9;
 
             % Create DelayULDLLabel
             app.DelayULDLLabel = uilabel(app.UIFigure);
