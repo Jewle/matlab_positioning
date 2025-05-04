@@ -56,54 +56,54 @@ classdef PositioningGUI < matlab.apps.AppBase
 
     methods (Access = private)
         function createComponents(app)
-            app.UIFigure = uifigure('Position', [100 100 640 520], 'Name', 'Positioning Simulation GUI');
+            app.UIFigure = uifigure('Position', [100 100 640 520], 'Name', 'Моделирование позиционирования');
 
             % Number of Iterations
-            app.NumIterationsLabel = uilabel(app.UIFigure, 'Position', [50 470 120 22], 'Text', 'Number of Iterations');
+            app.NumIterationsLabel = uilabel(app.UIFigure, 'Position', [50 470 120 22], 'Text', 'Количество итераций');
             app.NumIterationsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 470 100 22], 'Value', 5);
 
             % SNR Range
-            app.SNRRangeLabel = uilabel(app.UIFigure, 'Position', [50 440 120 22], 'Text', 'SNR Range (dB)');
+            app.SNRRangeLabel = uilabel(app.UIFigure, 'Position', [50 440 120 22], 'Text', 'Диапазон ОСШ (дБ)');
             app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '8:2:14');
 
             % Number of APs
-            app.NumAPsLabel = uilabel(app.UIFigure, 'Position', [50 410 120 22], 'Text', 'Number of APs');
+            app.NumAPsLabel = uilabel(app.UIFigure, 'Position', [50 410 120 22], 'Text', 'Количество ТД');
             app.NumAPsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 410 100 22], 'Value', 3);
 
             % Channel Bandwidth
-            app.ChanBWLabel = uilabel(app.UIFigure, 'Position', [50 380 120 22], 'Text', 'Channel Bandwidth');
+            app.ChanBWLabel = uilabel(app.UIFigure, 'Position', [50 380 120 22], 'Text', 'Ширина полосы');
             app.ChanBWDropDown = uidropdown(app.UIFigure, 'Position', [180 380 100 22], 'Items', {'CBW20', 'CBW40', 'CBW80', 'CBW160'}, 'Value', 'CBW20');
 
             % Number of Tx Antennas
-            app.NumTxLabel = uilabel(app.UIFigure, 'Position', [50 350 120 22], 'Text', 'Num Tx Antennas');
+            app.NumTxLabel = uilabel(app.UIFigure, 'Position', [50 350 120 22], 'Text', 'Количество передающих антенн');
             app.NumTxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 350 100 22], 'Value', 1);
 
             % Number of Rx Antennas
-            app.NumRxLabel = uilabel(app.UIFigure, 'Position', [50 320 120 22], 'Text', 'Num Rx Antennas');
+            app.NumRxLabel = uilabel(app.UIFigure, 'Position', [50 320 120 22], 'Text', 'Количество принимаемых антенн');
             app.NumRxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 320 100 22], 'Value', 1);
 
             % Number of Space-Time Streams
-            app.NumSTSLabel = uilabel(app.UIFigure, 'Position', [50 290 120 22], 'Text', 'Num Space-Time Streams');
+            app.NumSTSLabel = uilabel(app.UIFigure, 'Position', [50 290 120 22], 'Text', 'Количество пространственно-временных потоков');
             app.NumSTSEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 290 100 22], 'Value', 1);
 
             % Number of LTF Repetitions
-            app.NumLTFRepetitionsLabel = uilabel(app.UIFigure, 'Position', [50 260 120 22], 'Text', 'Num LTF Repetitions');
+            app.NumLTFRepetitionsLabel = uilabel(app.UIFigure, 'Position', [50 260 120 22], 'Text', 'Повторение HE-LTF');
             app.NumLTFRepetitionsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 260 100 22], 'Value', 2);
 
             % Delay Profile
-            app.DelayProfileLabel = uilabel(app.UIFigure, 'Position', [50 230 120 22], 'Text', 'Delay Profile');
+            app.DelayProfileLabel = uilabel(app.UIFigure, 'Position', [50 230 120 22], 'Text', 'Модель канала');
             app.DelayProfileDropDown = uidropdown(app.UIFigure, 'Position', [180 230 100 22], 'Items', {'Model-A', 'Model-B', 'Model-C', 'Model-D', 'Model-E'}, 'Value', 'Model-B');
 
             % Carrier Frequency
-            app.CarrierFrequencyLabel = uilabel(app.UIFigure, 'Position', [50 200 120 22], 'Text', 'Carrier Frequency (Hz)');
+            app.CarrierFrequencyLabel = uilabel(app.UIFigure, 'Position', [50 200 120 22], 'Text', 'Частота (Гц)');
             app.CarrierFrequencyEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 200 100 22], 'Value', 2.4e9);
 
             % Delay UL-DL
-            app.DelayULDLLabel = uilabel(app.UIFigure, 'Position', [50 170 120 22], 'Text', 'Delay UL-DL (s)');
+            app.DelayULDLLabel = uilabel(app.UIFigure, 'Position', [50 170 120 22], 'Text', 'Задержка ВЛ-НЛ (s)');
             app.DelayULDLEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 170 100 22], 'Value', 1e-6);
 
             % Чекбокс Use MUSIC
-            app.UseMusicCheckBox = uicheckbox(app.UIFigure, 'Position', [50 140 200 22], 'Text', 'Use MUSIC for ToA Estimation', 'Value', true);
+            app.UseMusicCheckBox = uicheckbox(app.UIFigure, 'Position', [50 140 200 22], 'Text', 'Использование MUSIC', 'Value', true);
 
             % Run Simulation Button
             app.RunSimulationButton = uibutton(app.UIFigure, 'push', 'Position', [280 50 150 30], 'Text', 'Запустить симуляцию');
