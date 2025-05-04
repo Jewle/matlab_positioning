@@ -49,7 +49,7 @@ classdef PositioningGUI < matlab.apps.AppBase
             delayULDL = app.DelayULDLEditField.Value;
             useMusic = app.UseMusicCheckBox.Value; % Передаём значение чекбокса
 
-            runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic);
+            runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic,10);
             rmpath('libs');
         end
     end

@@ -1,4 +1,4 @@
-function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic)
+function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic, speed)
     % Добавляем папку libs и текущую директорию в путь поиска
     addpath('libs');
     currentFolder = fileparts(mfilename('fullpath'));
@@ -44,28 +44,65 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
     % Ranging Measurement
     numSNR = numel(snrRange);
     distEst = nan(numAPs, numIterations, numSNR); % Estimated distance
-    positionSTA = zeros(2, numIterations, numSNR); % STA positions
+    positionSTA = nan(2, numIterations); % Real STA positions (now 2D)
+    positionSTAEst = nan(2, numIterations, numSNR); % Estimated STA positions
     positionAP = zeros(2, numAPs, numIterations, numSNR); % AP positions
     per = zeros(numSNR, 1); % Packet error rate
 
-    % Генерируем позиции AP и STA один раз перед parfor
-    distance = zeros(numAPs, numIterations); % True distance (не зависит от SNR)
-    for iter = 1:numIterations
-        [positionSTA(:, iter, 1), positionAP(:, :, iter, 1), distanceAllAPs] = heGeneratePositions(numAPs);
-        distance(:, iter) = distanceAllAPs;
-        % Копируем позиции для всех SNR
-        for isnr = 1:numSNR
-            positionSTA(:, iter, isnr) = positionSTA(:, iter, 1);
-            positionAP(:, :, iter, isnr) = positionAP(:, :, iter, 1);
+    % Генерируем начальные позиции AP и STA
+    [positionSTA(:, 1), positionAP(:, :, 1, 1), distanceAllAPs] = heGeneratePositions(numAPs);
+    distance = zeros(numAPs, numIterations); % True distance
+    distance(:, 1) = distanceAllAPs;
+
+    % Копируем начальные позиции AP для всех SNR
+    for isnr = 1:numSNR
+        positionAP(:, :, 1, isnr) = positionAP(:, :, 1, 1);
+    end
+
+    % Генерируем траекторию STA до parfor
+    direction = rand(1, 2) * 2 - 1; % Случайное направление в 2D
+    direction = direction / norm(direction); % Нормализуем
+    localDirection = direction;
+    for iter = 2:numIterations
+        % Добавляем небольшое случайное отклонение к направлению для нелинейности
+        perturbation = (rand(1, 2) - 0.5) * 0.2; % Небольшое отклонение
+        localDirection = localDirection + perturbation;
+        localDirection = localDirection / norm(localDirection); % Нормализуем
+        % Перемещаем STA с равномерной скоростью
+        positionSTA(:, iter) = positionSTA(:, iter-1) + speed * localDirection';
+        % Обновляем расстояния до AP
+        for ap = 1:numAPs
+            distance(ap, iter) = norm(positionSTA(:, iter) - positionAP(:, ap, 1, 1));
         end
     end
 
-    % Определяем строку метода для лейблов
-   if useMusic
+    % Определяем строку метода для лейблов через if else
+    if useMusic
         methodStr = 'MUSIC';
     else
         methodStr = 'No MUSIC';
-   end
+    end
+
+    % Создаем фигуры для анимации и графиков y(x)
+    figure('Name', 'Trilateration Animation');
+    hold on;
+    axis equal;
+    xlabel('X (meters)');
+    ylabel('Y (meters)');
+    title('Trilateration Animation');
+
+    figure('Name', 'Trajectory Plots');
+    subplot(2, 1, 1);
+    hold on;
+    title('Real Position Trajectory');
+    xlabel('X (meters)');
+    ylabel('Y (meters)');
+
+    subplot(2, 1, 2);
+    hold on;
+    title('Estimated Position Trajectory');
+    xlabel('X (meters)');
+    ylabel('Y (meters)');
 
     parfor isnr = 1:numSNR
         chan = chanBase;
@@ -83,8 +120,12 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
 
         % Локальная копия distEst для текущего SNR
         localDistEst = nan(numAPs, numIterations);
+        localPositionSTAEst = nan(2, numIterations);
+        localPositionAP = positionAP(:, :, :, isnr); % Копия позиций AP для текущего SNR
 
         for iter = 1:numIterations
+            % Копируем позиции AP для текущей итерации
+            localPositionAP(:, :, iter) = positionAP(:, :, 1, isnr);
             delay = distance(:, iter)/speedOfLight;
             sampleDelay = delay*sampleRate;
 
@@ -141,10 +182,16 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
                     failedPackets = failedPackets + 1;
                 end
             end
+
+            % Trilateration для текущей итерации
+            if sum(~isnan(localDistEst(:, iter))) >= 3
+                localPositionSTAEst(:, iter) = hePositionEstimate(squeeze(localPositionAP(:, :, iter)), localDistEst(:, iter));
+            end
         end
 
-        % Сохраняем результаты в глобальный массив
+        % Сохраняем результаты в глобальные массивы
         distEst(:, :, isnr) = localDistEst;
+        positionSTAEst(:, :, isnr) = localPositionSTAEst;
         mae = rangingError/((numAPs*numIterations) - failedPackets);
         per(isnr) = failedPackets/(numAPs*numIterations);
         if per(isnr) > 0.01
@@ -153,62 +200,36 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
         disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, Method: ', methodStr, ', Ranging mean absolute error = ', num2str(mae), ' meters.'])
     end
 
-    % Построение CDF ошибок расстояний
-    % rangingError = abs(distance - distEst);
-    % validRangingError = rangingError(~isnan(rangingError));
-    % if ~isempty(validRangingError)
-    %     figure('Name', ['Ranging Error CDF - Method: ', methodStr]);
-    %     hePlotErrorCDF(validRangingError, snrRange, methodStr);
-    %     xlabel('Absolute ranging error (meters)');
-    %     title(['Ranging Error CDF - Method: ', methodStr]);
-    % else
-    %     disp(['No valid ranging error data for CDF plot - Method: ', methodStr]);
-    % end
-
-    % Trilateration
-    positionSTAEst = nan(2, numIterations, numSNR);
-    RMSE = nan(numIterations, numSNR);
-    for isnr = 1:numSNR
-        for i = 1:numIterations
-            if sum(~isnan(distEst(:, i, isnr))) >= 3
-                positionSTAEst(:, i, isnr) = hePositionEstimate(squeeze(positionAP(:, :, i, isnr)), squeeze(distEst(:, i, isnr)));
-                RMSE(i, isnr) = sqrt(mean((positionSTAEst(:, i, isnr) - positionSTA(:, i, isnr)).^2));
+    % Построение анимации трилатерации с дискретным позиционированием
+    figure(1);
+    for i = 1:numIterations
+        for isnr = 1:numSNR
+            if ~isnan(positionSTAEst(1, i, isnr)) && ~isnan(positionSTA(1, i))
+                % Очищаем график для каждой новой точки
+                cla;
+                % Рисуем трилатерационные круги
+                hePlotTrilaterationCircles(squeeze(positionAP(:, :, 1, isnr)), positionSTAEst(:, i, isnr), distEst(:, i, isnr), snrRange(isnr), i);
+                % Рисуем реальную позицию STA (красная точка)
+                plot(positionSTA(1, i), positionSTA(2, i), 'ro', 'MarkerSize', 10, 'DisplayName', 'Real STA');
+                % Рисуем вычисленную позицию STA (синяя точка)
+                plot(positionSTAEst(1, i, isnr), positionSTAEst(2, i, isnr), 'bo', 'MarkerSize', 10, 'DisplayName', 'Estimated STA');
+                legend('show');
+                drawnow; % Обновляем график
+                pause(0.1); % Задержка для эффекта анимации
             end
         end
-        validRMSE = RMSE(:, isnr);
-        validRMSE = validRMSE(~isnan(validRMSE));
-        if ~isempty(validRMSE)
-            posEr = mean(validRMSE);
-            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, Method: ', methodStr, ', Average RMS Positioning error = ', num2str(posEr), ' meters.'])
-        else
-            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, No valid positioning data - Method: ', methodStr]);
-        end
     end
 
-    % Построение CDF ошибок позиционирования
-    % validRMSE = RMSE(~isnan(RMSE(:)));
-    % if ~isempty(validRMSE)
-    %     figure('Name', ['Positioning Error CDF - Method: ', methodStr]);
-    %     hePlotErrorCDF(validRMSE, snrRange, methodStr);
-    %     xlabel('RMS positioning error (meters)');
-    %     title(['Positioning Error CDF - Method: ', methodStr]);
-    % else
-    %     disp(['No valid positioning error data for CDF plot - Method: ', methodStr]);
-    % end
-
-    % Построение трилатерационных кругов для каждого SNR
+    % Построение графиков y(x) для реальной и вычисленной позиций
+    figure(2);
+    subplot(2, 1, 1);
+    plot(positionSTA(1, :), positionSTA(2, :), 'r-', 'DisplayName', 'Real Trajectory');
+    legend('show');
+    subplot(2, 1, 2);
     for isnr = 1:numSNR
-        validIter = find(sum(~isnan(distEst(:, :, isnr)), 1) >= 3, 1, 'last');
-        if ~isempty(validIter)
-            figure('Name', ['Trilateration Circles - Method: ', methodStr, ' for SNR ', num2str(snrRange(isnr)), ' dB']);
-            hePlotTrilaterationCircles(squeeze(positionAP(:, :, validIter, isnr)), ...
-                                       squeeze(positionSTAEst(:, validIter, isnr)), ...
-                                       squeeze(distEst(:, validIter, isnr)), ...
-                                       snrRange(isnr), validIter);
-        else
-            disp(['No valid trilateration data for SNR ', num2str(snrRange(isnr)), ' dB - Method: ', methodStr]);
-        end
+        plot(positionSTAEst(1, :, isnr), positionSTAEst(2, :, isnr), 'b-', 'DisplayName', ['Estimated Trajectory SNR=' num2str(snrRange(isnr)) ' dB']);
     end
+    legend('show');
 
     % Удаляем путь после выполнения
     rmpath('libs');
