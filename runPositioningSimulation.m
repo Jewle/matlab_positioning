@@ -64,7 +64,7 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
    if useMusic
         methodStr = 'MUSIC';
     else
-        methodStr = 'No MUSIC';
+        methodStr = 'Без MUSIC';
    end
 
     parfor isnr = 1:numSNR
@@ -150,7 +150,7 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
         if per(isnr) > 0.01
             warning('wlan:discardPacket', 'At SNR = %d dB, %d%% of packets were discarded', snrRange(isnr), 100*per(isnr));
         end
-        disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, Method: ', methodStr, ', Ranging mean absolute error = ', num2str(mae), ' meters.'])
+        disp(['Для ОСШ = ', num2str(snrRange(isnr)), ' дБ, Метод: ', methodStr, ', Ошибка опредления дистанции = ', num2str(mae), ' м.'])
     end
 
     % Построение CDF ошибок расстояний
@@ -179,9 +179,9 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
         validRMSE = validRMSE(~isnan(validRMSE));
         if ~isempty(validRMSE)
             posEr = mean(validRMSE);
-            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, Method: ', methodStr, ', Average RMS Positioning error = ', num2str(posEr), ' meters.'])
+            disp(['Для ОСШ = ', num2str(snrRange(isnr)), ' дБ, Метод: ', methodStr, ', Среднеквадратичная ошибка поз-ания = ', num2str(posEr), ' м.'])
         else
-            disp(['At SNR = ', num2str(snrRange(isnr)), ' dB, No valid positioning data - Method: ', methodStr]);
+            disp(['Для ОСШ = ', num2str(snrRange(isnr)), ' дБ Нет валидных данных ', methodStr]);
         end
     end
 
@@ -200,17 +200,17 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
     for isnr = 1:numSNR
         validIter = find(sum(~isnan(distEst(:, :, isnr)), 1) >= 3, 1, 'last');
         if ~isempty(validIter)
-            figure('Name', ['Trilateration Circles - Method: ', methodStr, ' for SNR ', num2str(snrRange(isnr)), ' dB']);
+            figure('Name', ['Трилатерация - Метод: ', methodStr, ' для ОСШ ', num2str(snrRange(isnr)), ' дБ']);
             hePlotTrilaterationCircles(squeeze(positionAP(:, :, validIter, isnr)), ...
                                        squeeze(positionSTAEst(:, validIter, isnr)), ...
                                        squeeze(distEst(:, validIter, isnr)), ...
                                        snrRange(isnr), validIter);
         else
-            disp(['No valid trilateration data for SNR ', num2str(snrRange(isnr)), ' dB - Method: ', methodStr]);
+            disp(['Нет корректных данных ', num2str(snrRange(isnr)), ' дБ Метод: ', methodStr]);
         end
     end
 
-    % Удаляем путь после выполнения
+
     rmpath('libs');
     rmpath(currentFolder);
 end

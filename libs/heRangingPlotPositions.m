@@ -34,10 +34,10 @@ for i = 1:numAPs
 end
 h(3) = plot(positionSTA(1),positionSTA(2),'rP','MarkerSize',10,'LineWidth',2);
 h(4) = plot(positionSTAEst(1),positionSTAEst(2),'kS','MarkerSize',10,'LineWidth',2);
-xlabel('X-position (meters)')
-ylabel('Y-position (meters)')
-title(['Node positions at SNR ' num2str(snr) ' dB for iteration #' num2str(iter) ])
-legend(h([1 2,3,4]),{'Trilateration circles','AP position','STA position','Estimated STA position'},'Location','best','FontSize',10)
+xlabel('X')
+ylabel('Y')
+title(['Позиция моб. уст-ва ' num2str(snr) ' дБ для итерации #' num2str(iter) ])
+legend(h([1 2,3,4]),{'Трилатерация','Позиция моб. уст-ва','Позиция ТД','Оценка позиции'},'Location','best','FontSize',10)
 legend('boxoff')
 axis equal
 end
