@@ -36,7 +36,7 @@ for i = 1:numAPs
     plot(x,y,'k--','LineWidth',1);
     hold on; grid on
 end
-title(['Node positions at SNR ' num2str(snr) ' dB for iteration #' num2str(iter) ])
-legend({'AP position','STA position','Estimated STA position','Trilateration circles'},'Location','best','FontSize',10)
+title(['Трилатерация для ОСШ ' num2str(snr) ' дБ для итерации №' num2str(iter) ])
+legend({'Позиция ТД','Позиция МС','Оценка позици МС','Трилатерация'},'Location','best','FontSize',10)
 legend('boxoff')
 end
