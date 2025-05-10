@@ -1,5 +1,9 @@
 function [positionSTAEst, RMSE] = performTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, methodStr)
     numSNR = numel(snrRange);
+    % Проверка размеров
+    if size(distEst, 1) ~= numAPs || size(positionAP, 2) ~= numAPs
+        error('Размеры distEst или positionAP не соответствуют numAPs');
+    end
     positionSTAEst = nan(2, numIterations, numSNR);
     RMSE = nan(numIterations, numSNR);
     
