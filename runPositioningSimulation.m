@@ -14,10 +14,10 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
     
     % Симуляция ranging
     [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRange, cfgSTABase, cfgAPBase, ...
-        chanBase, ofdmInfo, sampleRate, chDelay, numPaths, speedOfLight, distance, delayULDL, useMusic, useAoA, methodStr);
+        chanBase, ofdmInfo, sampleRate, chDelay, numPaths, numRx,carrierFrequency, speedOfLight, distance, delayULDL, useMusic, useAoA, methodStr);
     
     % Трилатерация и вычисление ошибок
-    [positionSTAEst, RMSE] = performTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, methodStr);
+    [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, methodStr,useAoA);
     
     % Визуализация результатов
     visualizeTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTAEst, distEst, methodStr);

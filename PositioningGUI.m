@@ -24,6 +24,7 @@ classdef PositioningGUI < matlab.apps.AppBase
         DelayULDLLabel
         DelayULDLEditField
         UseMusicCheckBox % Новый чекбокс
+        UseAoACheckBox
         RunSimulationButton
     end
 
@@ -48,9 +49,8 @@ classdef PositioningGUI < matlab.apps.AppBase
             carrierFrequency = app.CarrierFrequencyEditField.Value;
             delayULDL = app.DelayULDLEditField.Value;
             useMusic = app.UseMusicCheckBox.Value; % Передаём значение чекбокса
-
-            runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic, false);
-            rmpath('libs');
+            useAoA = app.UseAoACheckBox.Value;
+            runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic, useAoA);
         end
     end
 
@@ -104,6 +104,8 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % Чекбокс Use MUSIC
             app.UseMusicCheckBox = uicheckbox(app.UIFigure, 'Position', [50 140 200 22], 'Text', 'Использование MUSIC', 'Value', true);
+            % Чекбокс Use AoA
+            app.UseAoACheckBox = uicheckbox(app.UIFigure, 'Position', [50 125 200 22], 'Text', 'Использование AoA', 'Value', false);
 
             % Run Simulation Button
             app.RunSimulationButton = uibutton(app.UIFigure, 'push', 'Position', [280 50 150 30], 'Text', 'Запустить симуляцию');

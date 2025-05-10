@@ -1,11 +1,11 @@
 function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRange, cfgSTABase, cfgAPBase, ...
-    chanBase, ofdmInfo, sampleRate, chDelay, numPaths, speedOfLight, distance, delayULDL,useMusic, useAoA, methodStr)
+    chanBase, ofdmInfo, sampleRate, chDelay, numPaths,numRx,carrierFrequency, speedOfLight, distance, delayULDL,useMusic, useAoA, methodStr)
     numSNR = numel(snrRange);
     distEst = nan(numAPs, numIterations, numSNR);
     aoaEst = nan(numAPs, numIterations, numSNR, numPaths);
     per = zeros(numSNR, 1);
     
-    parfor isnr = 1:numSNR
+    for isnr = 1:numSNR
         chan = chanBase;
         cfgAP = cfgAPBase;
         cfgSTA = cfgSTABase;
