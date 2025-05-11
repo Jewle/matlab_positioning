@@ -9,7 +9,7 @@ function aoa = heRangingAoAEstimate(chanEst, numRx, carrierFrequency, numPaths)
     % Параметры антенной решётки
     lambda = physconst('LightSpeed') / carrierFrequency;
     d = lambda / 2; % Расстояние между антеннами
-    theta = -90:0.1:90; % Более высокое разрешение углов
+    theta = -90:1:90; % Более высокое разрешение углов
 
     % Вектор управления
     steeringVectors = exp(-1j * 2 * pi * d / lambda * (0:numRx-1)' * sind(theta));
@@ -36,10 +36,10 @@ function aoa = heRangingAoAEstimate(chanEst, numRx, carrierFrequency, numPaths)
         Pmusic(i) = 1 / abs(a' * (En * En') * a);
     end
 
-    % plot(theta, 10*log10(Pmusic));
-    % title('MUSIC Spectrum');
-    % xlabel('AoA (degrees)');
-    % ylabel('Magnitude (dB)');
+    plot(theta, 10*log10(Pmusic));
+    title('MUSIC Spectrum');
+    xlabel('AoA (degrees)');
+    ylabel('Magnitude (dB)');
 
     % Поиск пиков с фильтрацией
     [pks, locs] = findpeaks(Pmusic, 'SortStr', 'descend', 'NPeaks', numPaths, 'MinPeakHeight', max(Pmusic)/10);

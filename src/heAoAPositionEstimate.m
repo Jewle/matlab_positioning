@@ -16,8 +16,8 @@ function positionSTAEst = heAoAPositionEstimate(positionAP, aoaEst)
     x0 = mean(positionAP, 2);
 
     % Ограничения на область поиска (10x10 м)
-    lb = [0; 0]; % Нижняя граница
-    ub = [10; 10]; % Верхняя граница
+    lb = [-20; -20]; % Нижняя граница
+    ub = [20; 20]; % Верхняя граница
 
     % Функция ошибки: сумма квадратов угловых отклонений
     errorFunc = @(x) sum(arrayfun(@(i) (atan2(x(2) - positionAP(2, i), x(1) - positionAP(1, i)) - deg2rad(aoaEst(i, 1))).^2, 1:numAPs));

@@ -50,6 +50,9 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
                     txMultipath = chan([txDelay; zeros(50, cfg.NumTransmitAntennas)]);
                     rx = awgn(txMultipath, snrVal);
                     [chanEstActiveSC, integerOffset] = heRangingSynchronize(rx, cfg);
+                    imagesc(angle(squeeze(chanEstActiveSC(:, :, 1))))
+                    colorbar
+                    title('Фаза канальной оценки')
 
                     if ~isempty(chanEstActiveSC)
                         if useMusic
