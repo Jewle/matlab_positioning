@@ -46,7 +46,7 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
 
                     reset(chan);
                     tx = heRangingWaveformGenerator(cfg);
-                    txDelay = heDelaySignal(tx, sampleDelay(ap));
+                    txDelay = heDelaySignal(tx,sampleDelay(ap));
                     txMultipath = chan([txDelay; zeros(50, cfg.NumTransmitAntennas)]);
                     rx = awgn(txMultipath, snrVal);
                     [chanEstActiveSC, integerOffset] = heRangingSynchronize(rx, cfg);
@@ -56,7 +56,7 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
                             fracDelay = heRangingTOAEstimate(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
                                                              ofdmInfo.FFTLength, sampleRate, numPaths);
                         else
-                            fracDelay = toEstUpdated(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
+                            fracDelay = toAEstUpdated(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
                                                      ofdmInfo.FFTLength, sampleRate);
                         end
                         integerOffset = integerOffset - chDelay;

@@ -7,7 +7,7 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
         configureWaveformAndChannel(numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency);
     
     % Генерация позиций STA и AP
-    [positionSTA, positionAP, distance] = generatePositions(numAPs, numIterations, numel(snrRange));
+    [positionSTA, positionAP, distance] = generateAllPositions(numAPs, numIterations, numel(snrRange));
     
     % Определение строки метода
     methodStr = getMethodString(useMusic);
@@ -20,8 +20,12 @@ function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx
     [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, methodStr,useAoA);
     
     % Визуализация результатов
-    visualizeTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTAEst, distEst, methodStr);
-    
+    if useAoA
+       visualizeAoAPositioning(numAPs, numIterations, snrRange, positionAP, positionSTA, positionSTAEst, aoaEst, methodStr); 
+    else
+       visualizeTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTAEst, distEst, methodStr);
+
+    end
     % Очистка путей поиска
     cleanupSearchPaths();
 end

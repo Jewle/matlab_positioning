@@ -1,4 +1,4 @@
-function fracDelay = toEstUpdated(chanEstActiveSC, activeFFTIndices, fftLength, sampleRate)
+function fracDelay = toAEstUpdated(chanEstActiveSC, activeFFTIndices, fftLength, sampleRate)
     chanEstMean = mean(chanEstActiveSC, [2, 3]);
     chanEstFull = zeros(fftLength, 1);
     chanEstFull(activeFFTIndices) = chanEstMean;

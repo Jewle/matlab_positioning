@@ -1,5 +1,5 @@
 function [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, methodStr,useAoA)
-    % Выполняет трилатерацию или AoA-позиционирование для оценки позиции STA
+    % Выполняет трилатерацию (ToA) или AoA-позиционирование для оценки позиции STA
     % numAPs - количество точек доступа
     % numIterations - количество итераций
     % snrRange - диапазон ОСШ
@@ -20,12 +20,11 @@ function [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterati
     positionSTAEst = nan(2, numIterations, numSNR);
     RMSE = nan(numIterations, numSNR);
     
-     for isnr = 1:numSNR
+    for isnr = 1:numSNR
         for i = 1:numIterations
             if useAoA
-                % Режим AoA: используем AoA и, если доступно, ToA
+                % Режим AoA: используем только углы прихода
                 positionSTAEst(:, i, isnr) = heAoAPositionEstimate(squeeze(positionAP(:, :, i, isnr)), ...
-                                                                   squeeze(distEst(:, i, isnr)), ...
                                                                    squeeze(aoaEst(:, i, isnr, :)));
             else
                 % Режим трилатерации: только ToA
@@ -35,7 +34,7 @@ function [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterati
                 end
             end
             % Вычисление RMSE
-            if ~isnan(positionSTAEst(:, i, isnr))
+            if ~any(isnan(positionSTAEst(:, i, isnr)))
                 RMSE(i, isnr) = sqrt(mean((positionSTAEst(:, i, isnr) - positionSTA(:, i, isnr)).^2));
             end
         end

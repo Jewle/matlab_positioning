@@ -60,11 +60,11 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % Number of Iterations
             app.NumIterationsLabel = uilabel(app.UIFigure, 'Position', [50 470 120 22], 'Text', 'Количество итераций');
-            app.NumIterationsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 470 100 22], 'Value', 5);
+            app.NumIterationsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 470 100 22], 'Value', 10);
 
             % SNR Range
             app.SNRRangeLabel = uilabel(app.UIFigure, 'Position', [50 440 120 22], 'Text', 'Диапазон ОСШ (дБ)');
-            app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '8:2:14');
+            app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '30:5:45');
 
             % Number of APs
             app.NumAPsLabel = uilabel(app.UIFigure, 'Position', [50 410 120 22], 'Text', 'Количество ТД');
@@ -72,19 +72,19 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % Channel Bandwidth
             app.ChanBWLabel = uilabel(app.UIFigure, 'Position', [50 380 120 22], 'Text', 'Ширина полосы');
-            app.ChanBWDropDown = uidropdown(app.UIFigure, 'Position', [180 380 100 22], 'Items', {'CBW20', 'CBW40', 'CBW80', 'CBW160'}, 'Value', 'CBW20');
+            app.ChanBWDropDown = uidropdown(app.UIFigure, 'Position', [180 380 100 22], 'Items', {'CBW20', 'CBW40', 'CBW80', 'CBW160'}, 'Value', 'CBW40');
 
             % Number of Tx Antennas
             app.NumTxLabel = uilabel(app.UIFigure, 'Position', [50 350 120 22], 'Text', 'Количество передающих антенн');
-            app.NumTxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 350 100 22], 'Value', 1);
+            app.NumTxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 350 100 22], 'Value', 2);
 
             % Number of Rx Antennas
             app.NumRxLabel = uilabel(app.UIFigure, 'Position', [50 320 120 22], 'Text', 'Количество принимаемых антенн');
-            app.NumRxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 320 100 22], 'Value', 1);
+            app.NumRxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 320 100 22], 'Value', 2);
 
             % Number of Space-Time Streams
             app.NumSTSLabel = uilabel(app.UIFigure, 'Position', [50 290 120 22], 'Text', 'Количество пространственно-временных потоков');
-            app.NumSTSEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 290 100 22], 'Value', 1);
+            app.NumSTSEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 290 100 22], 'Value', 2);
 
             % Number of LTF Repetitions
             app.NumLTFRepetitionsLabel = uilabel(app.UIFigure, 'Position', [50 260 120 22], 'Text', 'Повторение HE-LTF');

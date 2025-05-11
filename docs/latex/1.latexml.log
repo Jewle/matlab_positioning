@@ -1,0 +1,48 @@
+latexml (LaTeXML version 0.8.8) processing 1.tex
+(Digesting TeX 1...
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/TeX.pool.ltxml...
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/eTeX.pool.ltxml... 0.00 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/pdfTeX.pool.ltxml... 0.00 sec) 0.05 sec)
+(Processing content /Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/docs/latex/1.tex...
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/LaTeX.pool.ltxml...
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/textcomp.sty.ltxml... 0.00 sec) 0.08 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/article.cls.ltxml... 0.00 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/inputenc.sty.ltxml...
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/utf8.def.ltxml... 0.00 sec) 0.00 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/babel.sty.ltxml...
+Warning:missing_file:babel Can't find package babel
+	at babel.sty.ltxml; line 26
+	Anticipate undefined macros or environments
+	search paths are /Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/docs/latex
+	In Core::Gullet[@0x1210106d0] /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/babel.sty.ltxml; line 26
+ 0.00 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/amsmath.sty.ltxml...
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/amsbsy.sty.ltxml...
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/amsgen.sty.ltxml... 0.00 sec) 0.00 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/amstext.sty.ltxml... 0.00 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/amsopn.sty.ltxml... 0.00 sec) 0.02 sec)
+(Loading /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/Package/amsfonts.sty.ltxml... 0.00 sec) 0.27 sec) 0.33 sec)
+(Building...
+(Loading compiled schema /opt/homebrew/Cellar/latexml/0.8.8_1/libexec/lib/perl5/LaTeXML/resources/RelaxNG/LaTeXML.model... 0.00 sec) 0.13 sec)
+(Rewriting... 0.00 sec)
+(Math Parsing 30 formulae ......
+Warning:not_parsed:POSTSUBSCRIPT.RELOP.UNKNOWN>OPEN MathParser failed to match rule 'Anything'
+	at 1.tex; line 35 col 6 - line 35 col 46
+	In "$\mathbf{y}_{k}=\mathbf{CFR}(k:k+L-1)$"
+	y[[UNKNOWN]] _{k}[[POSTSUBSCRIPT]] =[[RELOP]] CFR[[UNKNOWN]]
+	        > ([[OPEN]] k[[UNKNOWN]] :[[METARELOP]] k[[UNKNOWN]] +[[ADDOP]] L[[UNKNOWN]] -[[ADDOP]] 1[[NUMBER]] )[[CLOSE]]
+Warning:not_parsed:POSTSUPERSCRIPT.UNKNOWN.POSTSUBSCRIPT>OPEN MathParser failed to match rule 'Anything'
+	at 1.tex; line 42 col 0 - line 44 col 14
+	In "\begin{equation}\mathbf{R}=\frac{1}{M}\sum_{k=1}^{M}\mathbf{R}_{n}(k:k+L-1,k:k%
+	+L-1).\end{equation}"
+	R[[UNKNOWN]] =[[RELOP]] \frac{1}{M}[[UNKNOWN]] ∑[[SUMOP]] _{k=1}[[POSTSUBSCRIPT]] ^{M}[[POSTSUPERSCRIPT]] R[[UNKNOWN]] _{n}[[POSTSUBSCRIPT]]
+	        > ([[OPEN]] k[[UNKNOWN]] :[[METARELOP]] k[[UNKNOWN]] +[[ADDOP]] L[[UNKNOWN]] -[[ADDOP]] 1[[NUMBER]] ,[[PUNCT]] k[[UNKNOWN]] :[[METARELOP]] k[[UNKNOWN]] +[[ADDOP]] L[[UNKNOWN]] -[[ADDOP]] 1[[NUMBER]] )[[CLOSE]]
+ 0.13 sec)
+Math parsing succeeded:
+   ltx:XMArg: 50/50
+   ltx:XMath: 28/30
+Symbols assumed as simple identifiers (with # of occurences):
+   'CFR{bold}' (8), 'C{blackboard}' (1), 'Delta' (3), 'E{bold}' (3), 'JR{bold}' (1), 'J{bold}' (1), 'Lambda' (1), 'L{italic}' (10), 'M{italic}' (3), 'N{italic}' (3), 'P{italic}' (6), 'R{bold}' (11), 'V{bold}' (2), 'a{bold}' (3), 'e{italic}' (2), 'f{italic}' (3), 'j{italic}' (2), 'k{italic}' (18), 'm{italic}' (1), 'omega' (7), 'pi' (2), 'tau' (5), 'y{bold}' (4)
+Set MATHPARSER_SPECULATE to speculate on possible notations.
+(Finalizing... 0.02 sec)
+Conversion complete: 3 warnings; 1 missing file[babel.sty] (See /Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/docs/latex/1.latexml.log) (reqd. 0.67s)

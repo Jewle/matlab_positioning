@@ -1,0 +1,931 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?latexml searchpaths="/Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/docs/latex"?>
+<?latexml class="article"?>
+<?latexml package="inputenc" options="utf8"?>
+<?latexml package="babel" options="russian"?>
+<?latexml package="amsmath"?>
+<?latexml package="amsfonts"?>
+<?latexml RelaxNGSchema="LaTeXML"?>
+<document xmlns="http://dlmf.nist.gov/LaTeXML">
+  <resource src="LaTeXML.css" type="text/css"/>
+  <resource src="ltx-article.css" type="text/css"/>
+  <section inlist="toc" xml:id="S1">
+    <tags>
+      <tag>1</tag>
+      <tag role="refnum">1</tag>
+      <tag role="typerefnum">§1</tag>
+    </tags>
+    <title><tag close=" ">1</tag>Применение алгоритма MUSIC для оценки времени прихода (ToA)</title>
+    <para xml:id="S1.p1">
+      <p>Алгоритм MUSIC (MUltiple SIgnal Classification) используется для высокоточной оценки времени прихода (ToA) в системах беспроводного позиционирования на основе стандарта IEEE 802.11ax. MUSIC позволяет эффективно разделять многолучевые компоненты сигнала, обеспечивая точную оценку временных задержек в сложных условиях распространения.</p>
+    </para>
+    <subsection inlist="toc" xml:id="S1.SS1">
+      <tags>
+        <tag>1.1</tag>
+        <tag role="refnum">1.1</tag>
+        <tag role="typerefnum">§1.1</tag>
+      </tags>
+      <title><tag close=" ">1.1</tag>Математическая модель</title>
+      <para xml:id="S1.SS1.p1">
+        <p>Канальные оценки, полученные из HE-LTF (High Efficiency Long Training Field), представляют собой комплексную матрицу частотного отклика канала (CFR):</p>
+        <equation xml:id="S1.E1">
+          <tags>
+            <tag>(1)</tag>
+            <tag role="refnum">1</tag>
+          </tags>
+          <Math mode="display" tex="\mathbf{CFR}\in\mathbb{C}^{N\times P}," text="CFR element-of C ^ (N * P)" xml:id="S1.E1.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E1.m1.1"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E1.m1.1">
+                    <XMTok meaning="element-of" name="in" role="RELOP">∈</XMTok>
+                    <XMTok font="bold" role="UNKNOWN">CFR</XMTok>
+                    <XMApp>
+                      <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                      <XMTok font="blackboard" role="UNKNOWN">C</XMTok>
+                      <XMApp>
+                        <XMTok fontsize="70%" meaning="times" role="MULOP">×</XMTok>
+                        <XMTok font="italic" fontsize="70%" role="UNKNOWN">N</XMTok>
+                        <XMTok font="italic" fontsize="70%" role="UNKNOWN">P</XMTok>
+                      </XMApp>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p>где <Math mode="inline" tex="N" text="N" xml:id="S1.SS1.p1.m1">
+            <XMath>
+              <XMTok font="italic" role="UNKNOWN">N</XMTok>
+            </XMath>
+          </Math> — количество активных поднесущих, <Math mode="inline" tex="P" text="P" xml:id="S1.SS1.p1.m2">
+            <XMath>
+              <XMTok font="italic" role="UNKNOWN">P</XMTok>
+            </XMath>
+          </Math> — количество снимков (пространственно-временных потоков и приёмных антенн).</p>
+      </para>
+      <para xml:id="S1.SS1.p2">
+        <p>Для обеспечения равномерного частотного отклика пропущенные поднесущие интерполируются:</p>
+        <equation xml:id="S1.E2">
+          <tags>
+            <tag>(2)</tag>
+            <tag role="refnum">2</tag>
+          </tags>
+          <Math mode="display" tex="\mathbf{CFR}_{\text{full}}(k)=\text{interp1}(\text{activeFFTIndices},\mathbf{%&#10;CFR},\text{allFFTIndices})," text="CFR _ [full] * k = [interp1] * vector@([activeFFTIndices], CFR, [allFFTIndices])" xml:id="S1.E2.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E2.m1.5"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E2.m1.5">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMApp>
+                      <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                      <XMApp>
+                        <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                        <XMTok font="bold" role="UNKNOWN">CFR</XMTok>
+                        <XMText><text fontsize="70%">full</text></XMText>
+                      </XMApp>
+                      <XMDual>
+                        <XMRef idref="S1.E2.m1.1"/>
+                        <XMWrap>
+                          <XMTok role="OPEN" stretchy="false">(</XMTok>
+                          <XMTok font="italic" role="UNKNOWN" xml:id="S1.E2.m1.1">k</XMTok>
+                          <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                        </XMWrap>
+                      </XMDual>
+                    </XMApp>
+                    <XMApp>
+                      <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                      <XMText>interp1</XMText>
+                      <XMDual>
+                        <XMApp>
+                          <XMTok meaning="vector"/>
+                          <XMRef idref="S1.E2.m1.2"/>
+                          <XMRef idref="S1.E2.m1.3"/>
+                          <XMRef idref="S1.E2.m1.4"/>
+                        </XMApp>
+                        <XMWrap>
+                          <XMTok role="OPEN" stretchy="false">(</XMTok>
+                          <XMText xml:id="S1.E2.m1.2">activeFFTIndices</XMText>
+                          <XMTok role="PUNCT">,</XMTok>
+                          <XMTok font="bold" role="UNKNOWN" xml:id="S1.E2.m1.3">CFR</XMTok>
+                          <XMTok role="PUNCT">,</XMTok>
+                          <XMText xml:id="S1.E2.m1.4">allFFTIndices</XMText>
+                          <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                        </XMWrap>
+                      </XMDual>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p><!--  %**** 1.tex Line 25 **** -->где интерполяция выполняется по амплитуде и фазе.</p>
+      </para>
+    </subsection>
+    <subsection inlist="toc" xml:id="S1.SS2">
+      <tags>
+        <tag>1.2</tag>
+        <tag role="refnum">1.2</tag>
+        <tag role="typerefnum">§1.2</tag>
+      </tags>
+      <title><tag close=" ">1.2</tag>Формирование корреляционной матрицы</title>
+      <para xml:id="S1.SS2.p1">
+        <p>Корреляционная матрица формируется с применением пространственного сглаживания и усреднения по прямому и обратному направлениям для повышения устойчивости алгоритма MUSIC.</p>
+      </para>
+      <para xml:id="S1.SS2.p2">
+        <p>Для одного снимка (<Math mode="inline" tex="P=1" text="P = 1" xml:id="S1.SS2.p2.m1">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="equals" role="RELOP">=</XMTok>
+                <XMTok font="italic" role="UNKNOWN">P</XMTok>
+                <XMTok meaning="1" role="NUMBER">1</XMTok>
+              </XMApp>
+            </XMath>
+          </Math>) корреляционная матрица вычисляется как:</p>
+        <equation xml:id="S1.E3">
+          <tags>
+            <tag>(3)</tag>
+            <tag role="refnum">3</tag>
+          </tags>
+          <Math mode="display" tex="\mathbf{R}=\frac{1}{M}\sum_{k=1}^{M}\mathbf{y}_{k}\mathbf{y}_{k}^{H}," text="R = (1 / M) * ((sum _ (k = 1)) ^ M)@(y _ k * (y _ k) ^ H)" xml:id="S1.E3.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E3.m1.1"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E3.m1.1">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMTok font="bold" role="UNKNOWN">R</XMTok>
+                    <XMApp>
+                      <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                      <XMApp>
+                        <XMTok mathstyle="display" meaning="divide" role="FRACOP"/>
+                        <XMTok meaning="1" role="NUMBER">1</XMTok>
+                        <XMTok font="italic" role="UNKNOWN">M</XMTok>
+                      </XMApp>
+                      <XMApp>
+                        <XMApp>
+                          <XMTok role="SUPERSCRIPTOP" scriptpos="mid1"/>
+                          <XMApp>
+                            <XMTok role="SUBSCRIPTOP" scriptpos="mid1"/>
+                            <XMTok mathstyle="display" meaning="sum" role="SUMOP" scriptpos="mid">∑</XMTok>
+                            <XMApp>
+                              <XMTok fontsize="70%" meaning="equals" role="RELOP">=</XMTok>
+                              <XMTok font="italic" fontsize="70%" role="UNKNOWN">k</XMTok>
+                              <XMTok fontsize="70%" meaning="1" role="NUMBER">1</XMTok>
+                            </XMApp>
+                          </XMApp>
+                          <XMTok font="italic" fontsize="70%" role="UNKNOWN">M</XMTok>
+                        </XMApp>
+                        <XMApp>
+                          <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                          <XMApp>
+                            <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                            <XMTok font="bold" role="UNKNOWN">y</XMTok>
+                            <XMTok font="italic" fontsize="70%" role="UNKNOWN">k</XMTok>
+                          </XMApp>
+                          <XMApp>
+                            <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                            <XMApp>
+                              <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                              <XMTok font="bold" role="UNKNOWN">y</XMTok>
+                              <XMTok font="italic" fontsize="70%" role="UNKNOWN">k</XMTok>
+                            </XMApp>
+                            <XMTok font="italic" fontsize="70%" role="UNKNOWN">H</XMTok>
+                          </XMApp>
+                        </XMApp>
+                      </XMApp>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p>где <Math class="ltx_math_unparsed" mode="inline" tex="\mathbf{y}_{k}=\mathbf{CFR}(k:k+L-1)" xml:id="S1.SS2.p2.m2">
+            <XMath>
+              <XMApp>
+                <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                <XMTok font="bold" role="UNKNOWN">y</XMTok>
+                <XMTok font="italic" fontsize="70%" role="UNKNOWN">k</XMTok>
+              </XMApp>
+              <XMTok meaning="equals" role="RELOP">=</XMTok>
+              <XMTok font="bold" role="UNKNOWN">CFR</XMTok>
+              <XMWrap>
+                <XMTok role="OPEN" stretchy="false">(</XMTok>
+                <XMTok font="italic" role="UNKNOWN">k</XMTok>
+                <XMTok name="colon" role="METARELOP">:</XMTok>
+                <XMTok font="italic" role="UNKNOWN">k</XMTok>
+                <XMTok meaning="plus" role="ADDOP">+</XMTok>
+                <XMTok font="italic" role="UNKNOWN">L</XMTok>
+                <XMTok meaning="minus" role="ADDOP">-</XMTok>
+                <XMTok meaning="1" role="NUMBER">1</XMTok>
+                <XMTok role="CLOSE" stretchy="false">)</XMTok>
+              </XMWrap>
+            </XMath>
+          </Math> — подмассив длиной <Math mode="inline" tex="L=\lfloor\frac{2}{3}N\rfloor" text="L = floor@((2 / 3) * N)" xml:id="S1.SS2.p2.m3">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="equals" role="RELOP">=</XMTok>
+                <XMTok font="italic" role="UNKNOWN">L</XMTok>
+                <XMDual>
+                  <XMApp>
+                    <XMTok meaning="floor"/>
+                    <XMRef idref="S1.SS2.p2.m3.1"/>
+                  </XMApp>
+                  <XMWrap>
+                    <XMTok name="lfloor" role="OPEN" stretchy="false">⌊</XMTok>
+                    <XMApp xml:id="S1.SS2.p2.m3.1">
+                      <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                      <XMApp>
+                        <XMTok mathstyle="text" meaning="divide" role="FRACOP"/>
+                        <XMTok fontsize="70%" meaning="2" role="NUMBER">2</XMTok>
+                        <XMTok fontsize="70%" meaning="3" role="NUMBER">3</XMTok>
+                      </XMApp>
+                      <XMTok font="italic" role="UNKNOWN">N</XMTok>
+                    </XMApp>
+                    <XMTok name="rfloor" role="CLOSE" stretchy="false">⌋</XMTok>
+                  </XMWrap>
+                </XMDual>
+              </XMApp>
+            </XMath>
+          </Math>, а <Math mode="inline" tex="M=N-L+1" text="M = (N - L) + 1" xml:id="S1.SS2.p2.m4">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="equals" role="RELOP">=</XMTok>
+                <XMTok font="italic" role="UNKNOWN">M</XMTok>
+                <XMApp>
+                  <XMTok meaning="plus" role="ADDOP">+</XMTok>
+                  <XMApp>
+                    <XMTok meaning="minus" role="ADDOP">-</XMTok>
+                    <XMTok font="italic" role="UNKNOWN">N</XMTok>
+                    <XMTok font="italic" role="UNKNOWN">L</XMTok>
+                  </XMApp>
+                  <XMTok meaning="1" role="NUMBER">1</XMTok>
+                </XMApp>
+              </XMApp>
+            </XMath>
+          </Math> — количество подмассивов.</p>
+      </para>
+      <para xml:id="S1.SS2.p3">
+        <p>Для нескольких снимков (<Math mode="inline" tex="P&gt;1" text="P &gt; 1" xml:id="S1.SS2.p3.m1">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="greater-than" role="RELOP">&gt;</XMTok>
+                <XMTok font="italic" role="UNKNOWN">P</XMTok>
+                <XMTok meaning="1" role="NUMBER">1</XMTok>
+              </XMApp>
+            </XMath>
+          </Math>) сначала формируется выборочная корреляционная матрица:</p>
+        <equation xml:id="S1.E4">
+          <tags>
+            <tag>(4)</tag>
+            <tag role="refnum">4</tag>
+          </tags>
+          <Math mode="display" tex="\mathbf{R}_{n}=\frac{1}{P}\sum_{k=1}^{P}\mathbf{CFR}(:,k)\mathbf{CFR}(:,k)^{H}," text="R _ n = (1 / P) * ((sum _ (k = 1)) ^ P)@(CFR * open-interval@(colon, k) * CFR * (open-interval@(colon, k)) ^ H)" xml:id="S1.E4.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E4.m1.5"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E4.m1.5">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMApp>
+                      <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                      <XMTok font="bold" role="UNKNOWN">R</XMTok>
+                      <XMTok font="italic" fontsize="70%" role="UNKNOWN">n</XMTok>
+                    </XMApp>
+                    <XMApp>
+                      <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                      <XMApp>
+                        <XMTok mathstyle="display" meaning="divide" role="FRACOP"/>
+                        <XMTok meaning="1" role="NUMBER">1</XMTok>
+                        <XMTok font="italic" role="UNKNOWN">P</XMTok>
+                      </XMApp>
+                      <XMApp>
+                        <XMApp>
+                          <XMTok role="SUPERSCRIPTOP" scriptpos="mid1"/>
+                          <XMApp>
+                            <XMTok role="SUBSCRIPTOP" scriptpos="mid1"/>
+                            <XMTok mathstyle="display" meaning="sum" role="SUMOP" scriptpos="mid">∑</XMTok>
+                            <XMApp>
+                              <XMTok fontsize="70%" meaning="equals" role="RELOP">=</XMTok>
+                              <XMTok font="italic" fontsize="70%" role="UNKNOWN">k</XMTok>
+                              <XMTok fontsize="70%" meaning="1" role="NUMBER">1</XMTok>
+                            </XMApp>
+                          </XMApp>
+                          <XMTok font="italic" fontsize="70%" role="UNKNOWN">P</XMTok>
+                        </XMApp>
+                        <XMApp>
+                          <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                          <XMTok font="bold" role="UNKNOWN">CFR</XMTok>
+                          <XMDual>
+                            <XMApp>
+                              <XMTok meaning="open-interval"/>
+                              <XMRef idref="S1.E4.m1.1"/>
+                              <XMRef idref="S1.E4.m1.2"/>
+                            </XMApp>
+                            <XMWrap>
+                              <XMTok role="OPEN" stretchy="false">(</XMTok>
+                              <XMTok name="colon" role="METARELOP" xml:id="S1.E4.m1.1">:</XMTok>
+                              <XMTok role="PUNCT">,</XMTok>
+                              <XMTok font="italic" role="UNKNOWN" xml:id="S1.E4.m1.2">k</XMTok>
+                              <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                            </XMWrap>
+                          </XMDual>
+                          <XMTok font="bold" role="UNKNOWN">CFR</XMTok>
+                          <XMApp>
+                            <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                            <XMDual>
+                              <XMApp>
+                                <XMTok meaning="open-interval"/>
+                                <XMRef idref="S1.E4.m1.3"/>
+                                <XMRef idref="S1.E4.m1.4"/>
+                              </XMApp>
+                              <XMWrap>
+                                <XMTok role="OPEN" stretchy="false">(</XMTok>
+                                <XMTok name="colon" role="METARELOP" xml:id="S1.E4.m1.3">:</XMTok>
+                                <XMTok role="PUNCT">,</XMTok>
+                                <XMTok font="italic" role="UNKNOWN" xml:id="S1.E4.m1.4">k</XMTok>
+                                <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                              </XMWrap>
+                            </XMDual>
+                            <XMTok font="italic" fontsize="70%" role="UNKNOWN">H</XMTok>
+                          </XMApp>
+                        </XMApp>
+                      </XMApp>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p>а затем применяется пространственное сглаживание:</p>
+        <equation xml:id="S1.E5">
+          <tags>
+            <tag>(5)</tag>
+            <tag role="refnum">5</tag>
+          </tags>
+          <Math class="ltx_math_unparsed" mode="display" tex="\mathbf{R}=\frac{1}{M}\sum_{k=1}^{M}\mathbf{R}_{n}(k:k+L-1,k:k+L-1)." xml:id="S1.E5.m1">
+            <XMath>
+              <XMTok font="bold" role="UNKNOWN">R</XMTok>
+              <XMTok meaning="equals" role="RELOP">=</XMTok>
+              <XMApp>
+                <XMTok mathstyle="display" meaning="divide" role="FRACOP"/>
+                <XMTok meaning="1" role="NUMBER">1</XMTok>
+                <XMTok font="italic" role="UNKNOWN">M</XMTok>
+              </XMApp>
+              <XMApp>
+                <XMTok role="SUPERSCRIPTOP" scriptpos="mid1"/>
+                <XMApp>
+                  <XMTok role="SUBSCRIPTOP" scriptpos="mid1"/>
+                  <XMTok mathstyle="display" meaning="sum" role="SUMOP" scriptpos="mid">∑</XMTok>
+                  <XMApp>
+                    <XMTok fontsize="70%" meaning="equals" role="RELOP">=</XMTok>
+                    <XMTok font="italic" fontsize="70%" role="UNKNOWN">k</XMTok>
+                    <XMTok fontsize="70%" meaning="1" role="NUMBER">1</XMTok>
+                  </XMApp>
+                </XMApp>
+                <XMTok font="italic" fontsize="70%" role="UNKNOWN">M</XMTok>
+              </XMApp>
+              <XMApp>
+                <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                <XMTok font="bold" role="UNKNOWN">R</XMTok>
+                <XMTok font="italic" fontsize="70%" role="UNKNOWN">n</XMTok>
+              </XMApp>
+              <XMWrap>
+                <XMTok role="OPEN" stretchy="false">(</XMTok>
+                <XMTok font="italic" role="UNKNOWN">k</XMTok>
+                <XMTok name="colon" role="METARELOP">:</XMTok>
+                <XMTok font="italic" role="UNKNOWN">k</XMTok>
+                <XMTok meaning="plus" role="ADDOP">+</XMTok>
+                <XMTok font="italic" role="UNKNOWN">L</XMTok>
+                <XMTok meaning="minus" role="ADDOP">-</XMTok>
+                <XMTok meaning="1" role="NUMBER">1</XMTok>
+                <XMTok role="PUNCT">,</XMTok>
+                <XMTok font="italic" role="UNKNOWN">k</XMTok>
+                <XMTok name="colon" role="METARELOP">:</XMTok>
+                <XMTok font="italic" role="UNKNOWN">k</XMTok>
+                <XMTok meaning="plus" role="ADDOP">+</XMTok>
+                <XMTok font="italic" role="UNKNOWN">L</XMTok>
+                <XMTok meaning="minus" role="ADDOP">-</XMTok>
+                <XMTok meaning="1" role="NUMBER">1</XMTok>
+                <XMTok role="CLOSE" stretchy="false">)</XMTok>
+              </XMWrap>
+              <XMTok role="PERIOD">.</XMTok>
+            </XMath>
+          </Math>
+        </equation>
+      </para>
+      <para xml:id="S1.SS2.p4">
+        <p>Для повышения устойчивости выполняется усреднение по прямому и обратному направлениям:</p>
+        <equation xml:id="S1.E6">
+          <tags>
+            <tag>(6)</tag>
+            <tag role="refnum">6</tag>
+          </tags>
+          <Math mode="display" tex="\mathbf{R}=\frac{\mathbf{R}+\mathbf{J}\mathbf{R}^{*}\mathbf{J}}{2}," text="R = (R + JR ^ * * J) / 2" xml:id="S1.E6.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E6.m1.1"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E6.m1.1">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMTok font="bold" role="UNKNOWN">R</XMTok>
+                    <XMApp>
+                      <XMTok mathstyle="display" meaning="divide" role="FRACOP"/>
+                      <XMApp>
+                        <XMTok meaning="plus" role="ADDOP">+</XMTok>
+                        <XMTok font="bold" role="UNKNOWN">R</XMTok>
+                        <XMApp>
+                          <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                          <XMApp>
+                            <XMTok role="SUPERSCRIPTOP" scriptpos="post2"/>
+                            <XMTok font="bold" role="UNKNOWN">JR</XMTok>
+                            <XMTok fontsize="70%" meaning="times" role="MULOP">∗</XMTok>
+                          </XMApp>
+                          <XMTok font="bold" role="UNKNOWN">J</XMTok>
+                        </XMApp>
+                      </XMApp>
+                      <XMTok meaning="2" role="NUMBER">2</XMTok>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p><!--  %**** 1.tex Line 50 **** -->где <Math mode="inline" tex="\mathbf{J}" text="J" xml:id="S1.SS2.p4.m1">
+            <XMath>
+              <XMTok font="bold" role="UNKNOWN">J</XMTok>
+            </XMath>
+          </Math> — матрица переворота, а <Math mode="inline" tex="\mathbf{R}^{*}" text="R ^ *" xml:id="S1.SS2.p4.m2">
+            <XMath>
+              <XMApp>
+                <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                <XMTok font="bold" role="UNKNOWN">R</XMTok>
+                <XMTok fontsize="70%" meaning="times" role="MULOP">∗</XMTok>
+              </XMApp>
+            </XMath>
+          </Math> — комплексно-сопряжённая матрица.</p>
+      </para>
+    </subsection>
+    <subsection inlist="toc" xml:id="S1.SS3">
+      <tags>
+        <tag>1.3</tag>
+        <tag role="refnum">1.3</tag>
+        <tag role="typerefnum">§1.3</tag>
+      </tags>
+      <title><tag close=" ">1.3</tag>Псевдоспектр MUSIC</title>
+      <para xml:id="S1.SS3.p1">
+        <p>Корреляционная матрица <Math mode="inline" tex="\mathbf{R}" text="R" xml:id="S1.SS3.p1.m1">
+            <XMath>
+              <XMTok font="bold" role="UNKNOWN">R</XMTok>
+            </XMath>
+          </Math> подвергается собственному разложению:</p>
+        <equation xml:id="S1.E7">
+          <tags>
+            <tag>(7)</tag>
+            <tag role="refnum">7</tag>
+          </tags>
+          <Math mode="display" tex="\mathbf{R}=\mathbf{V}\mathbf{\Lambda}\mathbf{V}^{H}," text="R = V * Lambda * V ^ H" xml:id="S1.E7.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E7.m1.1"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E7.m1.1">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMTok font="bold" role="UNKNOWN">R</XMTok>
+                    <XMApp>
+                      <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                      <XMTok font="bold" role="UNKNOWN">V</XMTok>
+                      <XMTok font="bold" name="Lambda" role="UNKNOWN">Λ</XMTok>
+                      <XMApp>
+                        <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                        <XMTok font="bold" role="UNKNOWN">V</XMTok>
+                        <XMTok font="italic" fontsize="70%" role="UNKNOWN">H</XMTok>
+                      </XMApp>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p>где <Math mode="inline" tex="\mathbf{E}_{n}" text="E _ n" xml:id="S1.SS3.p1.m2">
+            <XMath>
+              <XMApp>
+                <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                <XMTok font="bold" role="UNKNOWN">E</XMTok>
+                <XMTok font="italic" fontsize="70%" role="UNKNOWN">n</XMTok>
+              </XMApp>
+            </XMath>
+          </Math> — матрица шумового подпространства, соответствующая <Math mode="inline" tex="L-M" text="L - M" xml:id="S1.SS3.p1.m3">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="minus" role="ADDOP">-</XMTok>
+                <XMTok font="italic" role="UNKNOWN">L</XMTok>
+                <XMTok font="italic" role="UNKNOWN">M</XMTok>
+              </XMApp>
+            </XMath>
+          </Math> наименьшим собственным значениям (<Math mode="inline" tex="M" text="M" xml:id="S1.SS3.p1.m4">
+            <XMath>
+              <XMTok font="italic" role="UNKNOWN">M</XMTok>
+            </XMath>
+          </Math> — число путей).</p>
+      </para>
+      <para xml:id="S1.SS3.p2">
+        <p>Псевдоспектр MUSIC вычисляется как:</p>
+        <equation xml:id="S1.E8">
+          <tags>
+            <tag>(8)</tag>
+            <tag role="refnum">8</tag>
+          </tags>
+          <Math mode="display" tex="P_{\text{MUSIC}}(\omega)=\frac{1}{\mathbf{a}(\omega)^{H}\mathbf{E}_{n}\mathbf{%&#10;E}_{n}^{H}\mathbf{a}(\omega)}," text="P _ [MUSIC] * omega = 1 / (a * omega ^ H * E _ n * (E _ n) ^ H * a * omega)" xml:id="S1.E8.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E8.m1.4"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E8.m1.4">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMApp>
+                      <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                      <XMApp>
+                        <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                        <XMTok font="italic" role="UNKNOWN">P</XMTok>
+                        <XMText><text fontsize="70%">MUSIC</text></XMText>
+                      </XMApp>
+                      <XMDual>
+                        <XMRef idref="S1.E8.m1.3"/>
+                        <XMWrap>
+                          <XMTok role="OPEN" stretchy="false">(</XMTok>
+                          <XMTok font="italic" name="omega" role="UNKNOWN" xml:id="S1.E8.m1.3">ω</XMTok>
+                          <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                        </XMWrap>
+                      </XMDual>
+                    </XMApp>
+                    <XMApp>
+                      <XMTok mathstyle="display" meaning="divide" role="FRACOP"/>
+                      <XMTok meaning="1" role="NUMBER">1</XMTok>
+                      <XMApp>
+                        <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                        <XMTok font="bold" role="UNKNOWN">a</XMTok>
+                        <XMApp>
+                          <XMTok role="SUPERSCRIPTOP" scriptpos="post2"/>
+                          <XMDual>
+                            <XMRef idref="S1.E8.m1.1"/>
+                            <XMWrap>
+                              <XMTok role="OPEN" stretchy="false">(</XMTok>
+                              <XMTok font="italic" name="omega" role="UNKNOWN" xml:id="S1.E8.m1.1">ω</XMTok>
+                              <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                            </XMWrap>
+                          </XMDual>
+                          <XMTok font="italic" fontsize="70%" role="UNKNOWN">H</XMTok>
+                        </XMApp>
+                        <XMApp>
+                          <XMTok role="SUBSCRIPTOP" scriptpos="post2"/>
+                          <XMTok font="bold" role="UNKNOWN">E</XMTok>
+                          <XMTok font="italic" fontsize="70%" role="UNKNOWN">n</XMTok>
+                        </XMApp>
+                        <XMApp>
+                          <XMTok role="SUPERSCRIPTOP" scriptpos="post2"/>
+                          <XMApp>
+                            <XMTok role="SUBSCRIPTOP" scriptpos="post2"/>
+                            <XMTok font="bold" role="UNKNOWN">E</XMTok>
+                            <XMTok font="italic" fontsize="70%" role="UNKNOWN">n</XMTok>
+                          </XMApp>
+                          <XMTok font="italic" fontsize="70%" role="UNKNOWN">H</XMTok>
+                        </XMApp>
+                        <XMTok font="bold" role="UNKNOWN">a</XMTok>
+                        <XMDual>
+                          <XMRef idref="S1.E8.m1.2"/>
+                          <XMWrap>
+                            <XMTok role="OPEN" stretchy="false">(</XMTok>
+                            <XMTok font="italic" name="omega" role="UNKNOWN" xml:id="S1.E8.m1.2">ω</XMTok>
+                            <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                          </XMWrap>
+                        </XMDual>
+                      </XMApp>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p>где <Math mode="inline" tex="\mathbf{a}(\omega)=[1,e^{j\omega},\dots,e^{j(L-1)\omega}]^{T}" text="a * omega = (list@(1, e ^ (j * omega), dots, e ^ (j * (L - 1) * omega))) ^ T" xml:id="S1.SS3.p2.m1">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="equals" role="RELOP">=</XMTok>
+                <XMApp>
+                  <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                  <XMTok font="bold" role="UNKNOWN">a</XMTok>
+                  <XMDual>
+                    <XMRef idref="S1.SS3.p2.m1.2"/>
+                    <XMWrap>
+                      <XMTok role="OPEN" stretchy="false">(</XMTok>
+                      <XMTok font="italic" name="omega" role="UNKNOWN" xml:id="S1.SS3.p2.m1.2">ω</XMTok>
+                      <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                    </XMWrap>
+                  </XMDual>
+                </XMApp>
+                <XMApp>
+                  <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                  <XMDual>
+                    <XMApp>
+                      <XMTok meaning="list"/>
+                      <XMRef idref="S1.SS3.p2.m1.3"/>
+                      <XMRef idref="S1.SS3.p2.m1.5"/>
+                      <XMRef idref="S1.SS3.p2.m1.4"/>
+                      <XMRef idref="S1.SS3.p2.m1.6"/>
+                    </XMApp>
+                    <XMWrap>
+                      <XMTok role="OPEN" stretchy="false">[</XMTok>
+                      <XMTok meaning="1" role="NUMBER" xml:id="S1.SS3.p2.m1.3">1</XMTok>
+                      <XMTok role="PUNCT">,</XMTok>
+                      <XMApp xml:id="S1.SS3.p2.m1.5">
+                        <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                        <XMTok font="italic" role="UNKNOWN">e</XMTok>
+                        <XMApp>
+                          <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                          <XMTok font="italic" fontsize="70%" role="UNKNOWN">j</XMTok>
+                          <XMTok font="italic" fontsize="70%" name="omega" role="UNKNOWN">ω</XMTok>
+                        </XMApp>
+                      </XMApp>
+                      <XMTok role="PUNCT">,</XMTok>
+                      <XMTok name="dots" role="ID" xml:id="S1.SS3.p2.m1.4">…</XMTok>
+                      <XMTok role="PUNCT">,</XMTok>
+                      <XMApp xml:id="S1.SS3.p2.m1.6">
+                        <XMTok role="SUPERSCRIPTOP" scriptpos="post1"/>
+                        <XMTok font="italic" role="UNKNOWN">e</XMTok>
+                        <XMApp>
+                          <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                          <XMTok font="italic" fontsize="70%" role="UNKNOWN">j</XMTok>
+                          <XMDual>
+                            <XMRef idref="S1.SS3.p2.m1.1"/>
+                            <XMWrap>
+                              <XMTok fontsize="70%" role="OPEN" stretchy="false">(</XMTok>
+                              <XMApp xml:id="S1.SS3.p2.m1.1">
+                                <XMTok fontsize="70%" meaning="minus" role="ADDOP">-</XMTok>
+                                <XMTok font="italic" fontsize="70%" role="UNKNOWN">L</XMTok>
+                                <XMTok fontsize="70%" meaning="1" role="NUMBER">1</XMTok>
+                              </XMApp>
+                              <XMTok fontsize="70%" role="CLOSE" stretchy="false">)</XMTok>
+                            </XMWrap>
+                          </XMDual>
+                          <XMTok font="italic" fontsize="70%" name="omega" role="UNKNOWN">ω</XMTok>
+                        </XMApp>
+                      </XMApp>
+                      <XMTok role="CLOSE" stretchy="false">]</XMTok>
+                    </XMWrap>
+                  </XMDual>
+                  <XMTok font="italic" fontsize="70%" role="UNKNOWN">T</XMTok>
+                </XMApp>
+              </XMApp>
+            </XMath>
+          </Math>, а <Math mode="inline" tex="\omega=2\pi\Delta f\tau" text="omega = 2 * pi * Delta * f * tau" xml:id="S1.SS3.p2.m2">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="equals" role="RELOP">=</XMTok>
+                <XMTok font="italic" name="omega" role="UNKNOWN">ω</XMTok>
+                <XMApp>
+                  <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                  <XMTok meaning="2" role="NUMBER">2</XMTok>
+                  <XMTok font="italic" name="pi" role="UNKNOWN">π</XMTok>
+                  <XMTok name="Delta" role="UNKNOWN">Δ</XMTok>
+                  <XMTok font="italic" role="UNKNOWN">f</XMTok>
+                  <XMTok font="italic" name="tau" role="UNKNOWN">τ</XMTok>
+                </XMApp>
+              </XMApp>
+            </XMath>
+          </Math>, <Math mode="inline" tex="\Delta f=\frac{\text{sampleRate}}{\text{fftLength}}" text="Delta * f = [sampleRate] / [fftLength]" xml:id="S1.SS3.p2.m3">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="equals" role="RELOP">=</XMTok>
+                <XMApp>
+                  <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                  <XMTok name="Delta" role="UNKNOWN">Δ</XMTok>
+                  <XMTok font="italic" role="UNKNOWN">f</XMTok>
+                </XMApp>
+                <XMApp>
+                  <XMTok mathstyle="text" meaning="divide" role="FRACOP"/>
+                  <XMText><text fontsize="70%">sampleRate</text></XMText>
+                  <XMText><text fontsize="70%">fftLength</text></XMText>
+                </XMApp>
+              </XMApp>
+            </XMath>
+          </Math>.</p>
+      </para>
+      <para xml:id="S1.SS3.p3">
+        <p>Временные задержки определяются из угловой частоты:</p>
+        <equation xml:id="S1.E9">
+          <tags>
+            <tag>(9)</tag>
+            <tag role="refnum">9</tag>
+          </tags>
+          <Math mode="display" tex="\tau=\frac{\omega}{2\pi\Delta f}." text="tau = omega / (2 * pi * Delta * f)" xml:id="S1.E9.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E9.m1.1"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E9.m1.1">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMTok font="italic" name="tau" role="UNKNOWN">τ</XMTok>
+                    <XMApp>
+                      <XMTok mathstyle="display" meaning="divide" role="FRACOP"/>
+                      <XMTok font="italic" name="omega" role="UNKNOWN">ω</XMTok>
+                      <XMApp>
+                        <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                        <XMTok meaning="2" role="NUMBER">2</XMTok>
+                        <XMTok font="italic" name="pi" role="UNKNOWN">π</XMTok>
+                        <XMTok name="Delta" role="UNKNOWN">Δ</XMTok>
+                        <XMTok font="italic" role="UNKNOWN">f</XMTok>
+                      </XMApp>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PERIOD">.</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+      </para>
+    </subsection>
+    <subsection inlist="toc" xml:id="S1.SS4">
+      <tags>
+        <tag>1.4</tag>
+        <tag role="refnum">1.4</tag>
+        <tag role="typerefnum">§1.4</tag>
+      </tags>
+      <title><tag close=" ">1.4</tag>Оценка ToA</title>
+      <para xml:id="S1.SS4.p1">
+        <p>Пиковые значения <Math mode="inline" tex="P_{\text{MUSIC}}(\tau)" text="P _ [MUSIC] * tau" xml:id="S1.SS4.p1.m1">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="times" role="MULOP">⁢</XMTok>
+                <XMApp>
+                  <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                  <XMTok font="italic" role="UNKNOWN">P</XMTok>
+                  <XMText><text fontsize="70%">MUSIC</text></XMText>
+                </XMApp>
+                <XMDual>
+                  <XMRef idref="S1.SS4.p1.m1.1"/>
+                  <XMWrap>
+                    <XMTok role="OPEN" stretchy="false">(</XMTok>
+                    <XMTok font="italic" name="tau" role="UNKNOWN" xml:id="S1.SS4.p1.m1.1">τ</XMTok>
+                    <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                  </XMWrap>
+                </XMDual>
+              </XMApp>
+            </XMath>
+          </Math> соответствуют задержкам <Math mode="inline" tex="\tau_{m}" text="tau _ m" xml:id="S1.SS4.p1.m2">
+            <XMath>
+              <XMApp>
+                <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                <XMTok font="italic" name="tau" role="UNKNOWN">τ</XMTok>
+                <XMTok font="italic" fontsize="70%" role="UNKNOWN">m</XMTok>
+              </XMApp>
+            </XMath>
+          </Math>, где <Math mode="inline" tex="m=1,2,\dots,M" text="m = list@(1, 2, dots, M)" xml:id="S1.SS4.p1.m3">
+            <XMath>
+              <XMApp>
+                <XMTok meaning="equals" role="RELOP">=</XMTok>
+                <XMTok font="italic" role="UNKNOWN">m</XMTok>
+                <XMDual>
+                  <XMApp>
+                    <XMTok meaning="list"/>
+                    <XMRef idref="S1.SS4.p1.m3.1"/>
+                    <XMRef idref="S1.SS4.p1.m3.2"/>
+                    <XMRef idref="S1.SS4.p1.m3.3"/>
+                    <XMRef idref="S1.SS4.p1.m3.4"/>
+                  </XMApp>
+                  <XMWrap>
+                    <XMTok meaning="1" role="NUMBER" xml:id="S1.SS4.p1.m3.1">1</XMTok>
+                    <XMTok role="PUNCT">,</XMTok>
+                    <XMTok meaning="2" role="NUMBER" xml:id="S1.SS4.p1.m3.2">2</XMTok>
+                    <XMTok role="PUNCT">,</XMTok>
+                    <XMTok name="dots" role="ID" xml:id="S1.SS4.p1.m3.3">…</XMTok>
+                    <XMTok role="PUNCT">,</XMTok>
+                    <XMTok font="italic" role="UNKNOWN" xml:id="S1.SS4.p1.m3.4">M</XMTok>
+                  </XMWrap>
+                </XMDual>
+              </XMApp>
+            </XMath>
+          </Math>. Для исключения ложных пиков применяется порог:</p>
+        <equation xml:id="S1.E10">
+          <tags>
+            <tag>(10)</tag>
+            <tag role="refnum">10</tag>
+          </tags>
+          <Math mode="display" tex="\text{threshold}=\frac{\max(P_{\text{MUSIC}})}{10^{\text{dynamicRange}/10}}," text="[threshold] = maximum@(P _ [MUSIC]) / 10 ^ ([dynamicRange] / 10)" xml:id="S1.E10.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E10.m1.3"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E10.m1.3">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMText>threshold</XMText>
+                    <XMApp>
+                      <XMTok mathstyle="display" meaning="divide" role="FRACOP"/>
+                      <XMDual>
+                        <XMApp>
+                          <XMRef idref="S1.E10.m1.1"/>
+                          <XMRef idref="S1.E10.m1.2"/>
+                        </XMApp>
+                        <XMApp>
+                          <XMTok meaning="maximum" role="OPFUNCTION" scriptpos="post" xml:id="S1.E10.m1.1">max</XMTok>
+                          <XMWrap>
+                            <XMTok role="OPEN" stretchy="false">(</XMTok>
+                            <XMApp xml:id="S1.E10.m1.2">
+                              <XMTok role="SUBSCRIPTOP" scriptpos="post2"/>
+                              <XMTok font="italic" role="UNKNOWN">P</XMTok>
+                              <XMText><text fontsize="70%">MUSIC</text></XMText>
+                            </XMApp>
+                            <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                          </XMWrap>
+                        </XMApp>
+                      </XMDual>
+                      <XMApp>
+                        <XMTok role="SUPERSCRIPTOP" scriptpos="post2"/>
+                        <XMTok meaning="10" role="NUMBER">10</XMTok>
+                        <XMApp>
+                          <XMTok fontsize="70%" meaning="divide" role="MULOP">/</XMTok>
+                          <XMText><text fontsize="70%">dynamicRange</text></XMText>
+                          <XMTok fontsize="70%" meaning="10" role="NUMBER">10</XMTok>
+                        </XMApp>
+                      </XMApp>
+                    </XMApp>
+                  </XMApp>
+                  <XMTok role="PUNCT">,</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+        <p>где <text class="ltx_markedasmath">dynamicRange</text> зависит от ширины полосы канала.</p>
+      </para>
+      <para xml:id="S1.SS4.p2">
+        <p>ToA определяется как минимальная задержка:</p>
+        <equation xml:id="S1.E11">
+          <tags>
+            <tag>(11)</tag>
+            <tag role="refnum">11</tag>
+          </tags>
+          <Math mode="display" tex="\text{ToA}=\min(\tau_{m})." text="[ToA] = minimum@(tau _ m)" xml:id="S1.E11.m1">
+            <XMath>
+              <XMDual>
+                <XMRef idref="S1.E11.m1.2"/>
+                <XMWrap>
+                  <XMApp xml:id="S1.E11.m1.2">
+                    <XMTok meaning="equals" role="RELOP">=</XMTok>
+                    <XMText>ToA</XMText>
+                    <XMDual>
+                      <XMApp>
+                        <XMRef idref="S1.E11.m1.1"/>
+                        <XMRef idref="S1.E11.m1.2.1"/>
+                      </XMApp>
+                      <XMApp>
+                        <XMTok meaning="minimum" role="OPFUNCTION" scriptpos="mid" xml:id="S1.E11.m1.1">min</XMTok>
+                        <XMWrap>
+                          <XMTok role="OPEN" stretchy="false">(</XMTok>
+                          <XMApp xml:id="S1.E11.m1.2.1">
+                            <XMTok role="SUBSCRIPTOP" scriptpos="post1"/>
+                            <XMTok font="italic" name="tau" role="UNKNOWN">τ</XMTok>
+                            <XMTok font="italic" fontsize="70%" role="UNKNOWN">m</XMTok>
+                          </XMApp>
+                          <XMTok role="CLOSE" stretchy="false">)</XMTok>
+                        </XMWrap>
+                      </XMApp>
+                    </XMDual>
+                  </XMApp>
+                  <XMTok role="PERIOD">.</XMTok>
+                </XMWrap>
+              </XMDual>
+            </XMath>
+          </Math>
+        </equation>
+      </para>
+    </subsection>
+    <subsection inlist="toc" xml:id="S1.SS5">
+      <tags>
+        <tag>1.5</tag>
+        <tag role="refnum">1.5</tag>
+        <tag role="typerefnum">§1.5</tag>
+      </tags>
+      <title><tag close=" ">1.5</tag>Реализация в симуляции</title>
+      <para xml:id="S1.SS5.p1">
+        <p>В реализованной симуляции алгоритм MUSIC применяется к канальным оценкам HE-LTF. Пространственное сглаживание и усреднение по прямому и обратному направлениям обеспечивают устойчивость в многолучевой среде. Псевдоспектр вычисляется с разрешением 0.1 м, что позволяет точно определять временные задержки. Полученное ToA используется для вычисления расстояний в алгоритмах трилатерации или комбинированного позиционирования с углами прихода (AoA).</p>
+      </para>
+    </subsection>
+  </section>
+</document>
