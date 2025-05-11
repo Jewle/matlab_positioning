@@ -9,6 +9,14 @@ function visualizeAoAPositioning(numAPs, numIterations, snrRange, positionAP, po
     % aoaEst - оценённые углы [numAPs, numIterations, numSNR, numPaths]
     % methodStr - строка метода
 
+% disp('AP Positions');
+% disp(positionAP);
+% disp("STA Positions");
+% disp(positionSTA);
+% disp("STA Estimated Poisitions");
+% disp("AoA Estimated");
+% disp(aoaEst);
+
     numSNR = numel(snrRange);
     for isnr = 1:numSNR
         % Найти последнюю итерацию с валидными данными

@@ -12,27 +12,30 @@ function positionSTAEst = heAoAPositionEstimate(positionAP, aoaEst)
         return;
     end
 
-    % Начальное приближение - среднее положение AP
-    x0 = mean(positionAP, 2);
+    % Начальное приближение - центр масс AP с корректировкой
+    x0 = mean(positionAP, 2) * 0.5; % Уменьшаем влияние крайних AP
 
-    % Ограничения на область поиска (10x10 м)
-    lb = [0; 0]; % Нижняя граница
-    ub = [10; 10]; % Верхняя граница
+    % Ограничения на область поиска (расширим до 50x50 м)
+    lb = [-50; -50];
+    ub = [50; 50];
 
-    % Функция ошибки: сумма квадратов угловых отклонений
-    errorFunc = @(x) sum(arrayfun(@(i) (atan2(x(2) - positionAP(2, i), x(1) - positionAP(1, i)) - deg2rad(aoaEst(i, 1))).^2, 1:numAPs));
+    % Функция ошибки с весами
+    w = ones(1, numAPs) ./ (1 + abs(aoaEst(:, 1) + 90)); % Вес зависит от близости к -90°
+    errorFunc = @(x) sum(arrayfun(@(i) w(i) * (atan2(x(2) - positionAP(2, i), x(1) - positionAP(1, i)) * 180/pi - aoaEst(i, 1)).^2, 1:numAPs));
+    
 
-    % Оптимизация с ограничениями
-    options = optimoptions('fmincon', 'Display', 'off', 'Algorithm', 'sqp');
+    % Оптимизация с настройками
+    options = optimoptions('fmincon', 'Display', 'off', 'Algorithm', 'sqp', 'MaxIterations', 2000, 'TolFun', 1e-6);
     try
         xOpt = fmincon(errorFunc, x0, [], [], [], [], lb, ub, [], options);
         positionSTAEst = xOpt;
+        disp(['Оценённая позиция STA: ', mat2str(positionSTAEst')]);
     catch e
         warning('Ошибка оптимизации: %s', e.message);
         positionSTAEst = nan(2, 1);
     end
 
-    % Отладочный вывод
+    % Отладка
     if any(isnan(positionSTAEst))
         disp('Невозможно определить позицию STA. Проверьте aoaEst:');
         disp(aoaEst(:, 1));

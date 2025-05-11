@@ -20,7 +20,7 @@ function aoa = heRangingAoAEstimate(chanEst, numRx, carrierFrequency, numPaths)
     % Параметры антенной решётки
     lambda = physconst('LightSpeed') / carrierFrequency;
     d = lambda / 2; % Расстояние между антеннами
-    theta = -90:0.1:90; % Высокое разрешение
+    theta = -90:0.005:90; % Высокое разрешение
 
     % Вектор управления
     steeringVectors = exp(-1j * 2 * pi * d / lambda * (0:numRx-1)' * sind(theta));
@@ -32,7 +32,7 @@ function aoa = heRangingAoAEstimate(chanEst, numRx, carrierFrequency, numPaths)
         R = R + H * H';
     end
     R = R / size(chanEst, 1);
-    % R = R + 1e-6 * eye(numRx); % Регуляризация
+    R = R + 1e-6 * eye(numRx); % Регуляризация
 
     % Отладка
     disp('Корреляционная матрица R:');
