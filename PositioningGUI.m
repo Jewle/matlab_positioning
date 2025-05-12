@@ -92,7 +92,7 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % Delay Profile
             app.DelayProfileLabel = uilabel(app.UIFigure, 'Position', [50 230 120 22], 'Text', 'Модель канала');
-            app.DelayProfileDropDown = uidropdown(app.UIFigure, 'Position', [180 230 100 22], 'Items', {'Model-A', 'Model-B', 'Model-C', 'Model-D', 'Model-E'}, 'Value', 'Model-B');
+            app.DelayProfileDropDown = uidropdown(app.UIFigure, 'Position', [180 230 100 22], 'Items', {'Model-A', 'Model-B', 'Model-C', 'Model-D', 'Model-E'}, 'Value', 'Model-C');
 
             % Carrier Frequency
             app.CarrierFrequencyLabel = uilabel(app.UIFigure, 'Position', [50 200 120 22], 'Text', 'Частота (Гц)');

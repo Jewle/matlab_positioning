@@ -1,0 +1,188 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration file="/Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/WiFiPositioning.prj" location="/Users/artemcizov/Desktop/programming/science/Matlab/FromGrok" name="WiFiPositioning" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>WiFiPositioning</param.appname>
+    <param.icon />
+    <param.icons />
+    <param.version>1.0</param.version>
+    <param.authnamewatermark>Artem</param.authnamewatermark>
+    <param.email>artem4ik500@yandex.ru</param.email>
+    <param.company>LETI</param.company>
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.guid />
+    <param.installpath.string>/LETI/WiFiPositioning/</param.installpath.string>
+    <param.installpath.combo>option.installpath.systemwideapp</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes>In the following directions, replace MR/R2024a by the directory on the target machine where MATLAB is installed, or MR by the directory where the MATLAB Runtime is installed.
+
+If the environment variable DYLD_LIBRARY_PATH is undefined, set it to the following string:
+
+MR/R2024a/runtime/maca64:MR/R2024a/sys/os/maca64:MR/R2024a/bin/maca64
+
+If it is defined, set it to the following:
+
+${DYLD_LIBRARY_PATH}:MR/R2024a/runtime/maca64:MR/R2024a/sys/os/maca64:MR/R2024a/bin/maca64</param.target.install.notes>
+    <param.intermediate>${PROJECT_ROOT}/WiFiPositioning/for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}/WiFiPositioning/for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}/WiFiPositioning/for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}/WiFiPositioning</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>false</param.web.mcr>
+    <param.package.mcr>true</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>false</param.windows.command.prompt>
+    <param.create.log>true</param.create.log>
+    <param.log.file>app.log</param.log.file>
+    <param.native.matlab>false</param.native.matlab>
+    <param.checkbox>false</param.checkbox>
+    <param.example />
+    <param.help.text>Syntax 
+	 WiFiPositioning -? 
+	 WiFiPositioning app 
+ Input Arguments 
+	 -?  print help on how to use the application 
+	 app  input arguments</param.help.text>
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.version />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.logdir />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.target.type />
+      <param.support.packages />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.native.matlab />
+      <param.checkbox />
+      <param.example />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}/PositioningGUI.m</file>
+    </fileset.main>
+    <fileset.resources />
+    <fileset.package>
+      <file>${PROJECT_ROOT}/PositioningGUI.m</file>
+      <file>${PROJECT_ROOT}/libs/HERangingPositioningExample.mlx</file>
+      <file>${PROJECT_ROOT}/libs/heDelaySignal.m</file>
+      <file>${PROJECT_ROOT}/libs/heGeneratePositions.m</file>
+      <file>${PROJECT_ROOT}/libs/heLTFRangingChannelEstimate.m</file>
+      <file>${PROJECT_ROOT}/libs/hePlotErrorCDF.m</file>
+      <file>${PROJECT_ROOT}/libs/hePlotNodePositions.m</file>
+      <file>${PROJECT_ROOT}/libs/hePlotTrilaterationCircles.m</file>
+      <file>${PROJECT_ROOT}/libs/hePositionEstimate.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingConfig.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingCorrelationMatrixEstimate.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingDemodulate.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingFieldIndices.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingFrequencyDomainWindow.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingLTF.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingLTFInfo.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingPlotDelayProfile.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingPlotPositions.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingSynchronize.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingTOAEstimate.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingUser.m</file>
+      <file>${PROJECT_ROOT}/libs/heRangingWaveformGenerator.m</file>
+      <file>${PROJECT_ROOT}/libs/heSecureLTFSequence.m</file>
+      <file>${PROJECT_ROOT}/runPositioningSimulation.m</file>
+      <file>${PROJECT_ROOT}/src/configureWaveformAndChannel.m</file>
+      <file>${PROJECT_ROOT}/src/customPosGen.m</file>
+      <file>${PROJECT_ROOT}/src/generateAllPositions.m</file>
+      <file>${PROJECT_ROOT}/src/generatePositions.m</file>
+      <file>${PROJECT_ROOT}/src/getMethodString.m</file>
+      <file>${PROJECT_ROOT}/src/heAoAPositionEstimate.m</file>
+      <file>${PROJECT_ROOT}/src/heRangingAoAEstimate.m</file>
+      <file>${PROJECT_ROOT}/src/heRangingTOAEstimateWithoutMusic.m</file>
+      <file>${PROJECT_ROOT}/src/performTrilateration.m</file>
+      <file>${PROJECT_ROOT}/src/runPositioningSimulation_UNUSED.m</file>
+      <file>${PROJECT_ROOT}/src/setupSearchPaths.m</file>
+      <file>${PROJECT_ROOT}/src/simulateRanging.m</file>
+      <file>${PROJECT_ROOT}/src/toAEstUpdated.m</file>
+      <file>${PROJECT_ROOT}/src/visualizeAoAPositioning.m</file>
+      <file>${PROJECT_ROOT}/src/visualizeTrilateration.m</file>
+    </fileset.package>
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}/runPositioningSimulation.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}/WiFiPositioning/for_testing" name="WiFiPositioning.app" optional="false">/Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/WiFiPositioning/for_testing/WiFiPositioning.app</file>
+      <file location="${PROJECT_ROOT}/WiFiPositioning/for_testing" name="splash.png" optional="false">/Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/WiFiPositioning/for_testing/splash.png</file>
+      <file location="${PROJECT_ROOT}/WiFiPositioning/for_testing" name="readme.txt" optional="true">/Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/WiFiPositioning/for_testing/readme.txt</file>
+      <file location="${PROJECT_ROOT}/WiFiPositioning/for_testing" name="run_WiFiPositioning.sh" optional="false">/Users/artemcizov/Desktop/programming/science/Matlab/FromGrok/WiFiPositioning/for_testing/run_WiFiPositioning.sh</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>/Applications/MATLAB_R2024a.app</root>
+      <toolboxes>
+        <toolbox name="matlabcoder" />
+        <toolbox name="embeddedcoder" />
+        <toolbox name="fixedpoint" />
+        <toolbox name="matlabhdlcoder" />
+        <toolbox name="neuralnetwork" />
+      </toolboxes>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+      <toolbox>
+        <embeddedcoder>
+          <enabled>true</enabled>
+        </embeddedcoder>
+      </toolbox>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <matlabhdlcoder>
+          <enabled>true</enabled>
+        </matlabhdlcoder>
+      </toolbox>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>true</unix>
+      <mac>true</mac>
+      <windows>false</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>15.1</osver>
+      <os32>true</os32>
+      <os64>false</os64>
+      <arch>maci64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
