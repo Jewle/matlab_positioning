@@ -32,7 +32,7 @@ function visualizeAoAPositioning(numAPs, numIterations, snrRange, positionAP, po
         % Позиции AP и лучи AoA
         apPos = squeeze(positionAP(:, :, validIter, isnr));
         angles = squeeze(aoaEst(:, validIter, isnr, 1));
-        maxRange = 10; % Максимальная длина лучей для визуализации (в метрах)
+        maxRange = 30; % Максимальная длина лучей для визуализации (в метрах)
         for i = 1:numAPs
             % Позиция AP
             plot(apPos(1, i), apPos(2, i), 'bs', 'MarkerSize', 8, 'LineWidth', 2, 'DisplayName', ['AP ', num2str(i)]);

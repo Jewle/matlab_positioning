@@ -80,7 +80,8 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
                 end
 
                 if useAoA && ~isempty(chanEstActiveSC)
-                    localAoaEst(ap, iter, :) = heRangingAoAEstimate(chanEstActiveSC, numRx, carrierFrequency, numPaths);
+                    % localAoaEst(ap, iter, :) = heRangingAoAEstimate(chanEstActiveSC, numRx, carrierFrequency, numPaths);
+                    localAoaEst(ap, iter, :) = heRangingAoAEstimateESPRIT(chanEstActiveSC, numRx, carrierFrequency, numPaths);
                 end
             end
         end

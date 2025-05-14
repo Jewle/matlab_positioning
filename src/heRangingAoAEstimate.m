@@ -1,49 +1,56 @@
-function aoa = heRangingAoAEstimate(chanEst, numRx, carrierFrequency, numPaths)
-    % Оценивает углы прихода (AoA) с использованием MUSIC
-    % chanEst - канальные оценки [numSubcarriers, numRx, numSTS]
-    % numRx - количество приёмных антенн
-    % carrierFrequency - несущая частота (Гц)
-    % numPaths - количество путей
-    % Возвращает aoa - углы в градусах [1, numPaths]
+function aoa = heRangingAoAEstimate(chanEst, carrierFrequency, numPaths)
+% Оценка углов прихода (AoA) через MUSIC
+% chanEst: [numSubcarriers × numRx × numSTS], numSTS обычно =1 для AoA
+% carrierFrequency: несущая частота (Гц)
+% numPaths: число возвращаемых углов
 
-    % Параметры антенной решётки
-    lambda = physconst('LightSpeed') / carrierFrequency;
-    d = lambda / 2; % Расстояние между антеннами
-    theta = -90:0.05:90; % Более высокое разрешение углов
+    %=== 1) Параметры антенной решётки ===%
+    c = physconst('LightSpeed');          
+    lambda = c / carrierFrequency;        % длина волны
+    d = lambda/2;                         % шаг между антеннами
 
-    % Вектор управления
-    steeringVectors = exp(-1j * 2 * pi * d / lambda * (0:numRx-1)' * sind(theta));
+    %=== 2) Steering-векторы ===%
+    numRx = size(chanEst,2);
+    theta = -90:0.1:90;                   % разрешение 0.1° — чуть быстрее, чем 0.05°
+    % exp(-j·2π·d/λ·m·sinθ) для m=0..numRx-1
+    steeringVectors = exp(-1j*2*pi*(d/lambda)*(0:numRx-1)' * sind(theta));
 
-    % Формирование корреляционной матрицы
-    R = zeros(numRx, numRx);
-    for sc = 1:size(chanEst, 1)
-        H = squeeze(chanEst(sc, :, :));
-        R = R + H * H';
+    %=== 3) Оценка корреляционной матрицы ===%
+    R = zeros(numRx);
+    Nsub = size(chanEst,1);
+    for sc = 1:Nsub
+        Hsc = squeeze(chanEst(sc,:,1)).'; % [numRx×1], берем первый поток
+        R = R + (Hsc * Hsc');              % аккумулируем энергию
     end
-    R = R / size(chanEst, 1);
+    R = R / Nsub;                        % усреднение
 
-    % Собственное разложение
+    %=== 4) EVD и отделение шумового подпространства ===%
     [V, D] = eig(R);
     [~, idx] = sort(diag(D), 'descend');
     V = V(:, idx);
-    En = V(:, numPaths+1:end); % Шумовое подпространство
+    En = V(:, numPaths+1:end);          % шумовое подпространство
 
-    % Псевдоспектр MUSIC
-    Pmusic = zeros(1, length(theta));
-    for i = 1:length(theta)
+    %=== 5) Вычисление MUSIC-спектра ===%
+    Pmusic = zeros(1, numel(theta));
+    for i = 1:numel(theta)
         a = steeringVectors(:, i);
-        Pmusic(i) = 1 / abs(a' * (En * En') * a);
+        denom = real(a' * (En*En') * a);
+        Pmusic(i) = 1 / max(eps, denom); % защита от деления на ноль
     end
 
-    % Поиск пиков с фильтрацией
-    [pks, locs] = findpeaks(Pmusic, 'SortStr', 'descend', 'NPeaks', numPaths, 'MinPeakHeight', max(Pmusic)/10);
+    %=== 6) Поиск пиков в спектре ===%
+    [pks, locs] = findpeaks(Pmusic, ...
+        'SortStr','descend', ...
+        'NPeaks',numPaths, ...
+        'MinPeakHeight', max(Pmusic)/10);
     if isempty(locs)
-        warning('Пики MUSIC не найдены, возвращаются нулевые углы');
+        warning('MUSIC peaks not found, returning zeros');
         aoa = zeros(1, numPaths);
     else
-        aoa = theta(locs);
-        if length(aoa) < numPaths
-            aoa = [aoa, zeros(1, numPaths - length(aoa))];
-        end
+        aoa = theta(locs);              % углы в градусах
+        % если пиков меньше, чем numPaths — дополняем нулями
+        aoa = [aoa, zeros(1, max(0, numPaths-numel(aoa)))];
     end
 end
+
+
