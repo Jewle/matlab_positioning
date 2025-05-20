@@ -1,0 +1,3591 @@
+./PositioningGUI.m
+
+classdef PositioningGUI < matlab.apps.AppBase
+    properties (Access = public)
+        UIFigure
+        NumIterationsLabel
+        NumIterationsEditField
+        SNRRangeLabel
+        SNRRangeEditField
+        NumAPsLabel
+        NumAPsEditField
+        ChanBWLabel
+        ChanBWDropDown
+        NumTxLabel
+        NumTxEditField
+        NumRxLabel
+        NumRxEditField
+        NumSTSLabel
+        NumSTSEditField
+        NumLTFRepetitionsLabel
+        NumLTFRepetitionsEditField
+        DelayProfileLabel
+        DelayProfileDropDown
+        CarrierFrequencyLabel
+        CarrierFrequencyEditField
+        DelayULDLLabel
+        DelayULDLEditField
+        UseMusicCheckBox % Новый чекбокс
+        UseAoACheckBox
+        RunSimulationButton
+    end
+
+    methods (Access = private)
+        function startupFcn(app)
+            app.ChanBWDropDown.Items = {'CBW20', 'CBW40', 'CBW80', 'CBW160'};
+            app.DelayProfileDropDown.Items = {'Model-A', 'Model-B', 'Model-C', 'Model-D', 'Model-E'};
+        end
+
+        function RunSimulationButtonPushed(app, event)
+            addpath('libs');
+            numIterations = app.NumIterationsEditField.Value;
+            snrRangeStr = app.SNRRangeEditField.Value;
+            snrRange = str2num(snrRangeStr); %#ok<ST2NM>
+            numAPs = app.NumAPsEditField.Value;
+            chanBW = app.ChanBWDropDown.Value;
+            numTx = app.NumTxEditField.Value;
+            numRx = app.NumRxEditField.Value;
+            numSTS = app.NumSTSEditField.Value;
+            numLTFRepetitions = app.NumLTFRepetitionsEditField.Value;
+            delayProfile = app.DelayProfileDropDown.Value;
+            carrierFrequency = app.CarrierFrequencyEditField.Value;
+            delayULDL = app.DelayULDLEditField.Value;
+            useMusic = app.UseMusicCheckBox.Value; % Передаём значение чекбокса
+            useAoA = app.UseAoACheckBox.Value;
+            runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic, useAoA);
+        end
+    end
+
+    methods (Access = private)
+        function createComponents(app)
+            app.UIFigure = uifigure('Position', [100 100 640 520], 'Name', 'Моделирование позиционирования');
+
+            % Number of Iterations
+            app.NumIterationsLabel = uilabel(app.UIFigure, 'Position', [50 470 120 22], 'Text', 'Количество итераций');
+            app.NumIterationsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 470 100 22], 'Value', 10);
+
+            % SNR Range
+            app.SNRRangeLabel = uilabel(app.UIFigure, 'Position', [50 440 120 22], 'Text', 'Диапазон ОСШ (дБ)');
+            app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '30:5:45');
+
+            % Number of APs
+            app.NumAPsLabel = uilabel(app.UIFigure, 'Position', [50 410 120 22], 'Text', 'Количество ТД');
+            app.NumAPsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 410 100 22], 'Value', 3);
+
+            % Channel Bandwidth
+            app.ChanBWLabel = uilabel(app.UIFigure, 'Position', [50 380 120 22], 'Text', 'Ширина полосы');
+            app.ChanBWDropDown = uidropdown(app.UIFigure, 'Position', [180 380 100 22], 'Items', {'CBW20', 'CBW40', 'CBW80', 'CBW160'}, 'Value', 'CBW40');
+
+            % Number of Tx Antennas
+            app.NumTxLabel = uilabel(app.UIFigure, 'Position', [50 350 120 22], 'Text', 'Количество передающих антенн');
+            app.NumTxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 350 100 22], 'Value', 2);
+
+            % Number of Rx Antennas
+            app.NumRxLabel = uilabel(app.UIFigure, 'Position', [50 320 120 22], 'Text', 'Количество принимаемых антенн');
+            app.NumRxEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 320 100 22], 'Value', 2);
+
+            % Number of Space-Time Streams
+            app.NumSTSLabel = uilabel(app.UIFigure, 'Position', [50 290 120 22], 'Text', 'Количество пространственно-временных потоков');
+            app.NumSTSEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 290 100 22], 'Value', 2);
+
+            % Number of LTF Repetitions
+            app.NumLTFRepetitionsLabel = uilabel(app.UIFigure, 'Position', [50 260 120 22], 'Text', 'Повторение HE-LTF');
+            app.NumLTFRepetitionsEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 260 100 22], 'Value', 2);
+
+            % Delay Profile
+            app.DelayProfileLabel = uilabel(app.UIFigure, 'Position', [50 230 120 22], 'Text', 'Модель канала');
+            app.DelayProfileDropDown = uidropdown(app.UIFigure, 'Position', [180 230 100 22], 'Items', {'Model-A', 'Model-B', 'Model-C', 'Model-D', 'Model-E'}, 'Value', 'Model-B');
+
+            % Carrier Frequency
+            app.CarrierFrequencyLabel = uilabel(app.UIFigure, 'Position', [50 200 120 22], 'Text', 'Частота (Гц)');
+            app.CarrierFrequencyEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 200 100 22], 'Value', 2.4e9);
+
+            % Delay UL-DL
+            app.DelayULDLLabel = uilabel(app.UIFigure, 'Position', [50 170 120 22], 'Text', 'Задержка ВЛ-НЛ (s)');
+            app.DelayULDLEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 170 100 22], 'Value', 1e-6);
+
+            % Чекбокс Use MUSIC
+            app.UseMusicCheckBox = uicheckbox(app.UIFigure, 'Position', [50 140 200 22], 'Text', 'Использование MUSIC', 'Value', true);
+            % Чекбокс Use AoA
+            app.UseAoACheckBox = uicheckbox(app.UIFigure, 'Position', [50 125 200 22], 'Text', 'Использование AoA', 'Value', false);
+
+            % Run Simulation Button
+            app.RunSimulationButton = uibutton(app.UIFigure, 'push', 'Position', [280 50 150 30], 'Text', 'Запустить симуляцию');
+            app.RunSimulationButton.ButtonPushedFcn = createCallbackFcn(app, @RunSimulationButtonPushed, true);
+        end
+    end
+
+    methods (Access = public)
+        function app = PositioningGUI
+            createComponents(app);
+            registerApp(app, app.UIFigure);
+            runStartupFcn(app, @startupFcn);
+        end
+
+        function delete(app)
+            delete(app.UIFigure);
+        end
+    end
+end
+./libs/heDelaySignal.m
+
+function y = heDelaySignal(x,delay)
+%heDelaySignal Introduces time delay in the signal
+%
+%   Y = heDelaySignal(X,DELAY) returns the delayed signal Y by applying
+%   DELAY to the input signal X. 
+%
+%   X represents the input signal that needs to be delayed, which can be a
+%   column vector or a matrix.
+%
+%   DELAY is an integer or non-integer scalar value (in samples).
+%
+%   Y is a delayed version of X which can be a column vector or a matrix.
+%   When X is a matrix with multiple columns, each column of X is delayed
+%   by DELAY and the resulting signal will be stored in corresponding
+%   column of Y.
+
+%   Copyright 2020 The MathWorks, Inc.
+
+% Initialization
+inputLength = size(x,1);     % Input signal length
+delayInt = round(delay);     % Integer delay
+delayFrac = delay-delayInt;  % Fractional delay
+outputLength = inputLength+delayInt; % Output signal length
+y = complex(zeros(outputLength,size(x,2)));
+
+% Perform delay operation
+if delayFrac
+    nfft = 2^nextpow2(outputLength);
+    binStart = floor(nfft/2);
+    % Notice the FFT bins must belong to [-pi, pi].
+    fftBin = 2*pi*ifftshift(((0:nfft-1)-binStart).')/nfft;
+    tmpxd = fft(x,nfft);
+    tmpxd = ifft(tmpxd.*exp(-1i*delay*fftBin));
+
+    newStart = delayInt+1;
+    y(newStart:outputLength,:) = tmpxd(newStart:outputLength,:);
+else
+    % Integer sample shift
+    newStart = delayInt+1;
+    y(newStart:outputLength,:) = x;
+end
+end
+
+./libs/heGeneratePositions.m
+
+function [positionSTA,positionAP,radius] = heGeneratePositions(n)
+%heGeneratePositions Generate STA and APs position
+%
+%   [POSITIONSTA,POSITIONAP,RADIUS] = heGeneratePositions(N) places a
+%   station (STA) and N number of access points (APs) randomly in xy-plane
+%   with X and Y positions in meters.
+%
+%   POSITIONSTA represents the 2-dimentional position of the STA at origin,
+%   with coordinates as [0; 0].
+%
+%   POSITIONAP is a matrix of size 2-by-N, represents the position of the
+%   APs. Each column of POSITIONAP denotes the 2-dimentional position of
+%   each AP in xy-plane.
+%
+%   RADIUS is a vector of size 1-by-N, represents the distance between the
+%   STA and APs in meters.
+%
+%   N is the number of APs in a network.
+
+%   Copyright 2020 The MathWorks, Inc.
+
+% Position the STA
+positionSTA = [0; 0]; % STA is always assumed to be at origin
+
+% Generate angle values in radians within [0: 2*pi] with a 2*pi/n radian
+% sector
+phi = (0:n-1)*(2*pi/n)+rand(1,n)*2*pi/(2*n);
+
+% Generate radius values in meters from the uniform distribution on the
+% interval [0,100]
+radius = 100.*rand(1,n); % Radius in meters
+
+% Transform polar to Cartesian coordinates
+[x, y] = pol2cart(phi,radius);
+
+% Position of APs
+positionAP = [x; y]; % X and Y positions in meters
+
+end
+./libs/heLTFRangingChannelEstimate.m
+
+function chanEst = heLTFRangingChannelEstimate(x,cfg,varargin)
+%heLTFRangingChannelEstimate Channel estimation using HE-LTF
+%   CHANEST = heLTFRangingChannelEstimate(X,CFG) returns the estimated
+%   channel between all space-time streams and receive antennas using
+%   HE-LTF of an HE ranging NDP. The channel estimates do not include the
+%   effect of cyclic shifts at the transmitter.
+%
+%   CHANEST is an array characterizing the estimated channel for the data
+%   and pilot subcarriers. CHANEST is a complex Nst-by-Nsts-by-Nr array
+%   characterizing the estimated channel, where Nst is the number of
+%   occupied subcarriers, Nsts is the total number of space-time streams,
+%   and Nr is the number of receive antennas.
+%
+%   X is a complex Nst-by-Nsym-by-Nr array containing demodulated
+%   concatenated HE-LTF. Nsym is the number of demodulated HE-LTF symbols.
+%
+%   CFG is a format configuration object of type <a href="matlab:help('heRangingConfig')">heRangingConfig</a>.
+%
+%   CHANEST = heLTFRangingChannelEstimate(...,USERNUMBER) returns the
+%   channel estimate for the user of interest. The USERNUMBER must be a
+%   scalar between 1 and 64, inclusive. The default is 1.
+%
+%   Example:
+%   %   Estimate the channel for each user in an HE Ranging NDP
+%   %   transmission with a fading channel model.
+%
+%       % Create packet configuration for two users
+%       numUsers = 2;
+%       cfg = heRangingConfig(numUsers);
+%       cfg.User{1}.SecureHELTFOctets = 'ab';
+%       cfg.User{2}.SecureHELTFOctets = 'cd';
+%
+%       % Generate an HE Ranging NDP waveform
+%       tx = heRangingWaveformGenerator(cfg);
+%
+%       % Get HE-LTF field indices
+%       indLTF = heRangingFieldIndices(cfg,'HE-LTF');
+%
+%       % Process all users
+%       for u=1:numUsers
+%           % Add channel and noise
+%           snr = 20;
+%           channel = wlanTGaxChannel;
+%           channel.NumTransmitAntennas = cfg.NumTransmitAntennas;
+%           channel.NumReceiveAntennas = 1;
+%           channel.SampleRate = wlanSampleRate(cfg.ChannelBandwidth);
+%           rx = awgn(channel([tx; zeros(10,1)]),snr);
+%
+%           % Synchronize
+%           offset = wlanSymbolTimingEstimate(rx,cfg.ChannelBandwidth);
+%           rx = rx(offset:end,:);
+%
+%           % Extract and OFDM demodulate the HE-LTF for all users
+%           rxHETLF = rx(indLTF(u,1): indLTF(u,2),:);
+%           demod = heRangingDemodulate(rxHETLF,cfg);
+%
+%           % Channel estimate for each user
+%           chanEst = heLTFRangingChannelEstimate(demod,cfg,u);
+%       end
+%
+%   See also heRangingConfig
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+narginchk(2,3);
+% Validate the format configuration object is a valid type
+validateattributes(cfg,{'heRangingConfig'},{'scalar'},mfilename,'format configuration object');
+
+userNumber = 1;
+if nargin>2
+    userNumber = varargin{1};
+    validateattributes(userNumber,{'numeric'},{'scalar','>=',1,'<=',64});
+    if userNumber>numel(cfg.User)
+        error('The UserNumber must be less than or equal to the number of users in heRangingConfig object');
+    end
+end
+
+% Get allocation information
+allocInfo = ruInfo(cfg);
+
+numSTSUser = cfg.User{userNumber}.NumSpaceTimeStreams;
+
+% Validate symbol type
+validateattributes(x,{'double','single'},{'3d'},mfilename,'HE-LTF OFDM symbol(s)');
+[numST,numLTF,numRx] = size(x);
+
+tac = wlan.internal.heRUToneAllocationConstants(allocInfo.RUSizes);
+coder.internal.errorIf(numST~=tac.NST,'wlan:wlanChannelEstimate:IncorrectNumSC',tac.NST,numST);
+ofdmInfo = wlanHEOFDMInfo('HE-LTF',cfg.ChannelBandwidth,cfg.GuardInterval,[allocInfo.RUSizes allocInfo.RUIndices]);
+if numLTF==0
+    chanEst = zeros(numST,numSTSUser,numRx,'like',x);
+    return;
+end
+
+% Validate the number of OFDM symbols
+hezInfo = heRangingLTFInfo(cfg);
+minNumLTF = hezInfo.NHELTFWithRepetition(userNumber);
+coder.internal.errorIf(numLTF<minNumLTF,'wlan:he:InvalidNumLTF',numLTF,minNumLTF);
+x = x(:,1:minNumLTF,:); % Process the valid demodulated HE-LTF symbols on all receive antennas
+N_HE_LTF_Mode = 2;
+
+% Get the HE-LTF sequence
+cbw = wlan.internal.cbwStr2Num(cfg.ChannelBandwidth);
+phaseRotation = zeros(1,1); % For codegen
+if cfg.SecureHELTF
+    % Get HE-LTF secure sequence. IEEE P802.11az-2022, Section 27.3.18b
+    [HELTF,kHELTFSeq,~,phaseRotation] = heSecureLTFSequence(cfg,userNumber); % HELTF is of size kHELTFSeq-by-Nltf
+else
+    % Get HE-LTF sequence. IEEE P802.11ax/D4.1, Section 27.3.10.10
+    [HELTF,kHELTFSeq] = wlan.internal.heLTFSequence(cbw,N_HE_LTF_Mode); % HELTF is of size kHELTFSeq-by-1
+end
+
+% Extract the RU of interest from the full-bandwidth HELTF
+kRU = ofdmInfo.ActiveFrequencyIndices;
+[~,ruIdx] = intersect(kHELTFSeq,kRU);
+HELTFRU = HELTF(ruIdx,:);
+
+if numSTSUser==1
+    % Single STS
+
+    % When more than one LTF we can average over the LTFs for data and
+    % pilots to improve the estimate. As there is only one space-time
+    % stream, the pilots and data essentially both use the P matrix which
+    % does not change per space-time stream (only per symbol), therefore
+    % this "MIMO" estimate performs the averaging of the number of symbols.
+    chanEst = mimoChannelEstimate(x,HELTFRU,numSTSUser,hezInfo.NHELTFWithoutRepetition(userNumber));
+
+    % Interpolate if HE-LTF compression used
+    chanEst = chanEstInterp(chanEst,cbw,N_HE_LTF_Mode,allocInfo.RUSizes,allocInfo.RUIndices);
+else
+    % MIMO channel estimation as per Perahia, Eldad, and Robert Stacey.
+    % Next Generation Wireless LANs: 802.11 n and 802.11 ac. Cambridge
+    % University Press, 2013, page 100, Equation 4.39. Remove orthogonal
+    % sequence across subcarriers (if used).
+    if cfg.SecureHELTF
+        % Perform channel estimate on active subcarriers as the same P
+        % matrix is used for data and pilot subcarriers.
+        chanEst = mimoChannelEstimate(x,HELTFRU,numSTSUser,hezInfo.NHELTFWithoutRepetition(userNumber),phaseRotation);
+        chanEst = chanEstInterp(chanEst,cbw,N_HE_LTF_Mode,allocInfo.RUSizes,allocInfo.RUIndices);
+    else
+        % Only perform channel estimate for non-pilot subcarriers as pilots are single stream
+        mimoInd = ofdmInfo.DataIndices;
+        kMIMO = kRU(mimoInd); % Only data subcarriers MIMO estimates
+        chanEst = mimoChannelEstimate(x(mimoInd,:,:),HELTFRU(mimoInd),numSTSUser,hezInfo.NHELTFWithoutRepetition(userNumber));
+        % Undo cyclic shift for each STS before averaging and interpolation
+        nfft = (cbw/20)*256;
+        csh = wlan.internal.getCyclicShiftVal('VHT',numSTSUser,cbw);
+        chanEst = wlan.internal.cyclicShiftChannelEstimate(chanEst,-csh,nfft,kMIMO);
+        chanEst = chanEstInterp(chanEst,cbw,N_HE_LTF_Mode,allocInfo.RUSizes,allocInfo.RUIndices,mimoInd);
+    end
+end
+
+end
+
+function chanEstRUInterp = chanEstInterp(chanEstRU,cbw,N_HE_LTF_Mode,ruSize,ruIndex,varargin)
+    % Interpolate over pilot locations and compressed subcarriers
+
+    % Get the subcarrier indices within the FFT for the channel estimate
+    % input
+    Nfft = 256*cbw/20;
+    kAct = wlan.internal.heRUSubcarrierIndices(cbw,ruSize,ruIndex)+Nfft/2+1;
+    % If the channelEstRU is not the entire RU, then we need to make sure
+    % we know the subcarrier indices, so use the ruInd input. For example
+    % this allows us to pass in only the data subcarriers.
+    if nargin>5
+        ruInd = varargin{1};
+        kChanEstInputs = kAct(ruInd);
+    else
+        % Assume chanEstRU is the whole RU
+        kChanEstInputs = kAct;
+    end
+
+    % Get the indices within the FFT which contain actual estimates
+    % (excluding the guard bands). This is how the pattern is structured
+    kAll = 1:N_HE_LTF_Mode:Nfft; 
+
+    % Find the subcarrier indices within the FFT which contain actual data
+    % within the channel estimate input (kToInterp) and the indices of
+    % these within the chanEstDataRU input array (toInterpInd)
+    [kToInterp,toInterpInd] = intersect(kChanEstInputs,kAll);
+
+    % Interpolate and extrapolate over all RU subcarrier indices to
+    % interpolate over compressed region and pilots
+    magPart = abs(chanEstRU(toInterpInd,:,:));
+    phasePart = unwrap(angle(chanEstRU(toInterpInd,:,:)));
+    combInterp = interp1(kToInterp.',cat(4,magPart,phasePart),kAct);
+
+    % Convert mag and phase to complex
+    magPartInterp = combInterp(:,:,:,1);
+    phasePartInterp = combInterp(:,:,:,2);
+    chanEstRUInterp = magPartInterp.*exp(1i*phasePartInterp);
+end
+
+function chanEst = mimoChannelEstimate(x,HELTF,numSTS,numHELTFWithoutRep,varargin)
+%mimoChannelEstimate MIMO channel estimation
+%
+%   CHANEST = mimoChannelEstimate(X,HELTF,NUMSTS,NUMHELTFWITHOUTREP)
+%   returns channel estimate for each subcarrier given received symbols X,
+%   reference sequence HE-LTF, number of space-time streams NUMSTS and
+%   number of HE-LTF symbols without repetition.
+%
+%   X are the received symbols of size Nst-by-Nltf-by-Nrx where NST is the
+%   number of subcarriers, Nltf is the number of LTF symbols and Nrx is the
+%   number of receive antennas. Note all subcarriers in X must have been
+%   modulated with the orthogonal mapping matrix P.
+%
+%   HELTF is the reference sequence and is sizes Nst-by-1.
+%
+%   NUMSTS is the number of space-time streams.
+%
+%   NUMHELTFWITHOUTREP is the number of HE-LTF symbols in HE-LTF excluding
+%   repetition of HE-LTF symbols.
+%
+%   [...] = mimoChannelEstimate(...,phaseRotation) returns the
+%   channel estimation given phase rotations for each HE-LTF symbol.
+%   phaseRotation is a NUMSTS-by-Nltf complex matrix.
+%
+%   MIMO channel estimation as per Perahia, Eldad, and Robert Stacey.
+%   Next Generation Wireless LANs: 802.11 n and 802.11 ac. Cambridge
+%   university press, 2013, page 100, Eq 4.39.
+
+[Nst,Nltf,Nrx] = size(x);
+phaseRotation = ones(numSTS,Nltf); % assume no phase roatiaon by default
+if ~isempty(varargin)
+    phaseRotation = varargin{1};
+end
+numRep = Nltf/numHELTFWithoutRep; % Number of HE-LTF repetitions
+% Get P matrix
+P = wlan.internal.mappingMatrix(numHELTFWithoutRep);
+Puse = P(1:numSTS,1:numHELTFWithoutRep)'; 
+PRep = repmat(Puse,numRep,1);
+denom = Nltf.*HELTF;
+chanEst = coder.nullcopy(zeros(Nst,numSTS,Nrx,'like',x));
+for k = 1:Nrx
+    rxsym = squeeze(x(:,(1:Nltf),k)); % Symbols on 1 receive antenna
+    for l = 1:numSTS
+        chanEst(:,l,k) = rxsym./denom*(PRep(:,l).*phaseRotation(l,:)');
+    end
+end
+
+end
+
+./libs/hePlotErrorCDF.m
+
+function hePlotErrorCDF(error,snrRange)
+%hePlotErrorCDF Plots the CDF of errors
+%
+%   hePlotErrorCDF(ERROR,SNRRANGE) plots the empirical CDF of errors for
+%   multiple SNR points
+%
+%   ERROR is a N-by-P array of errors where N is the number of error
+%   measurements at a particular SNR and P is the number of SNR points
+%
+%   SNRRANGE is a P-by-1 array of SNR values for which ERROR was generated
+
+%   Copyright 2020 The MathWorks, Inc.
+
+figure;
+totName = [];
+xRange = zeros(1,length(snrRange));
+for isnr = 1:length(snrRange)
+    [x, F] = stairs(sort(error(:,isnr)),(1:length(error(:,isnr)))/length(error(:,isnr)));
+    plot(x,F)
+    hold on
+    [~,idx] = min(abs(F - 0.9));
+    xRange(isnr) = x(idx);
+    name = ['SNR: ',num2str(snrRange(isnr)),' dB'];
+    totName = [convertCharsToStrings(totName),convertCharsToStrings(name)];
+end
+if isscalar(xRange) && isnan(xRange)
+    xlim([0 1]),ylim([0 1]);
+else
+    xlim([0 max(xRange,[],'omitnan')]),ylim([0 1]);
+end
+legend(totName,'Location','Southeast');
+
+xlabel('RMS positioning error (meters)'),ylabel('CDF');
+title('Positioning Error CDF');
+grid on;
+
+end
+./libs/hePlotNodePositions.m
+
+function hePlotNodePositions(positionAP,positionSTA)
+%hePlotNodePositions Plots the position of all APs and the STA
+%
+%   hePlotNodePositions(POSITIONAP,POSITIONSTA) plots the STA and all AP
+%   positions in the xy-plane.
+%
+%   POSITIONAP represents the 2-dimentional position of the APs in
+%   xy-plane.
+%
+%   POSITIONSTA represents the 2-dimentional position of the STA in
+%   xy-plane.
+
+%   Copyright 2020 The MathWorks, Inc.
+
+plot(positionAP(1,:),positionAP(2,:),'b^','LineWidth',2),hold on
+plot(positionSTA(1),positionSTA(2),'rp','LineWidth',2),hold on
+legend('AP Locations','STA Location')
+
+% Get distance from APs to STA to keep consistent plot axes
+radiusAP = sqrt(positionAP(1,:).^2 + positionAP(2,:).^2);
+range = max(abs(positionAP+repmat(radiusAP,[2 1])),[],'all');
+xlim([-range range]),ylim([-range range]);
+axis equal
+grid on;
+xlabel('x-axis (meters)'),ylabel('y-axis (meters)');
+
+end
+./libs/hePlotTrilaterationCircles.m
+
+function hePlotTrilaterationCircles(positionAP,positionSTAEst,distanceEst,snr,iter)
+%hePlotTrilaterationCircles Plots the positioning trilateration circles
+%
+%   hePlotTrilaterationCircles(POSITIONAP,POSITIONSTAEST,DISTANCEEST,SNR,ITER)
+%   plots the STA, estimated STA and APs positions in the xy-plane with
+%   trilateration circles at the given signal-to-noise ratio.
+%
+%   POSITIONAP represents the 2-dimentional position of the APs in
+%   xy-plane.
+%
+%   POSITIONSTAEST represents the estimated 2-dimentional position of the
+%   STA in xy-plane.
+%
+%   DISTANCEEST represents the estimated distance between the STA and APs
+%   in meters.
+%
+%   SNR is the signal-to-noise ratio in dB.
+%
+%   ITER denotes the iteration.
+
+%   Copyright 2020 The MathWorks, Inc.
+
+% Plot the positions of the STA and APs in the xy-plane
+positionSTA = [0; 0]; %STA always at the origin
+
+figure
+hePlotNodePositions(positionAP,positionSTA); % Plot AP and actual STA location
+plot(positionSTAEst(1),positionSTAEst(2),'kx','LineWidth',1.5,'MarkerSize',10); % Plot STA estimate
+
+% Plot trilateration circles
+numAPs = size(positionAP,2);
+angles = 0:2*pi/720:2*pi;
+for i = 1:numAPs
+    x = distanceEst(i) * cos(angles) + positionAP(1,i);
+    y = distanceEst(i) * sin(angles) + positionAP(2,i);
+    plot(x,y,'k--','LineWidth',1);
+    hold on; grid on
+end
+title(['Трилатерация для ОСШ ' num2str(snr) ' дБ для итерации №' num2str(iter) ])
+legend({'Позиция ТД','Позиция МС','Оценка позици МС','Трилатерация'},'Location','best','FontSize',10)
+legend('boxoff')
+end
+./libs/hePositionEstimate.m
+
+function positionEst = hePositionEstimate(position,distance)
+%hePositionEstimate Estimates the station (STA) position using
+%trilateration
+%   POSITIONEST = hePositionEstimate(POSITION,DISTANCE) estimates the
+%   unknown position of the STA, POSITIONEST using the known access points
+%   (APs) positions, POSITION and the estimated distances between APs and
+%   STA, DISTANCE.
+%
+%   POSITION is a matrix of size 2-by-N, represents the position of the N
+%   number of APs in a network. Each column of POSITION denotes the
+%   2-dimentional position of each AP in xy-plane.
+%
+%   DISTANCE is a vector of size 1-by-N, represents the distance between the
+%   STA and APs in meters.
+%
+%   POSITIONEST represents the estimated 2-dimentional position of the STA
+%   in xy-plane.
+
+%   Copyright 2020 The MathWorks, Inc.
+
+% Load the position of APs in X and Y coordinates
+numAPs = size(position,2); % Number of APs
+dimLen = size(position,1); % Dimensions (2D/3D)
+x = position(1,:).';
+y = position(2,:).';
+
+% Perform trilateration to estimate the position of the STA in meters
+A = zeros(numAPs-1,dimLen);
+B = zeros(1,numAPs-1);
+for i = 1:numAPs-1
+    A(i,:) = [2*(x(i)-x(end)) 2*(y(i)-y(end))];
+    B(i) = x(i)^2-x(end)^2+y(i)^2-y(end)^2+distance(end)^2-distance(i)^2;
+end
+positionEst = (A.'*A)\(A.'*B(:));
+end
+./libs/heRangingConfig.m
+
+classdef heRangingConfig < comm.internal.ConfigBase
+%heRangingConfig Creates an object for parameterizing HE ranging NDP transmission
+%   CFG = heRangingConfig creates an object for parameterizing HE ranging
+%   null data packet (NDP) transmission for an HE NDP packet. This object
+%   contains transmit parameters for the HE Ranging NDP format of IEEE
+%   802.11az-2022 standard.
+%
+%   CFG = heRangingConfig(NumUsers) creates an object for parameterizing HE
+%   ranging NDP transmission for an HE NDP packet. NumUsers specifies the
+%   number of users as scalar between 1 and 64 (inclusive). When NumUsers
+%   is greater than one the HE-LTF field contains secure HE-LTF symbols for
+%   multiple users.
+%
+%   CFG = heRangingConfig(..., Name,Value) creates an object for
+%   parameterizing HE ranging NDP transmission for an HE NDP packet, CFG,
+%   with the specified property Name set to the specified Value. You can
+%   specify additional name-value pair arguments in any order as
+%   (Name1,Value1, ...,NameN,ValueN).
+%
+%   heRangingConfig methods:
+%
+%   packetFormat         - HE SU packet format
+%   numHELTFSymbols      - Number of HE-LTF symbols
+%   numSecureHELTFOctets - Number of secure HE-LTF octets
+%   showAllocation       - Shows the RU allocation
+%   transmitTime         - Time required to transmit a packet
+%
+%   heRangingConfig properties:
+%
+%   ChannelBandwidth            - Channel bandwidth
+%   InactiveSubchannels         - Indicate punctured 20 MHz subchannels
+%   User                        - User properties of HE-LTF
+%   SecureHELTF                 - Type of HE-LTF sequence
+%   NumTransmitAntennas         - Number of transmit antennas
+%   PreHECyclicShifts           - Cyclic shift values for >8 transmit chains
+%   PreHESpatialMapping         - Indicate spatial mapping of pre-HE-STF portion
+%   GuardInterval               - Guard interval type
+%   UplinkIndication            - Indicate if the PPDU is sent on the uplink
+%   BSSColor                    - Basic service set (BSS) color identifier
+%   TXOPDuration                - Duration information for TXOP protection
+%   HighDoppler                 - Indicate high-Doppler mode
+%   MidamblePeriodicity         - Midamble periodicity in number of OFDM symbols
+%   STBC                        - Enable space-time block coding
+%   MCS                         - Modulation and coding scheme
+%   DCM                         - Enable dual coded modulation for HE-Data field
+%   ChannelCoding               - Channel coding type
+%   HELTFType                   - Indicate HE-LTF compression mode
+%   Beamforming                 - Indicate beamforming
+%   APEPLength                  - Indicate APEP length
+%   SpatialReuse                - Indicate spatial reuse indication
+%   FrequencyDomainWindowing    - Enable frequency domain windowing
+%
+%   % Example 1:
+%   %  Parameterize an HE ranging NDP object for a single user.
+%
+%   cfg = heRangingConfig;
+%   disp(cfg)
+%
+%   % Example 2:
+%   %  Parameterize a secure HE Ranging NDP object for a single user.
+%
+%   cfg = heRangingConfig;
+%   cfg.SecureHELTF = true;
+%   disp(cfg)
+%
+%   % Example 3:
+%   %  Generate a time-domain signal for a secure HE Ranging NDP
+%   %  transmission for two users. The number of space-time streams are
+%   %  two and one for user 1 and 2, respectively. Generate the HE-LTF
+%   %  symbols for both users by specifying a secure HE-LTF sequence.
+%
+%   cfg = heRangingConfig(2);    % Create format configuration
+%   cfg.NumTransmitAntennas = 2; % Number of transmit antennas
+%
+%   % Set space-time streams and number of HE-LTF repetitions
+%   cfg.User{1}.NumSpaceTimeStreams = 2;
+%   cfg.User{1}.NumHELTFRepetitions = 2;
+%
+%   cfg.User{2}.NumSpaceTimeStreams = 1;
+%   cfg.User{2}.NumHELTFRepetitions = 2;
+%
+%   % Get the number of the secure octets for all users for the given configuration
+%   numOctets = numSecureHELTFOctets(cfg);
+%
+%   % Set secure HE-LTF octets for user-1, which is represented as a int vector
+%   cfg.User{1}.SecureHELTFOctets = randi([0 255], 1, numOctets(1));
+%
+%   % Set secure HE-LTF octets for user-2, which is represented as hex decimals
+%   hexChars = ['0':'9' 'a':'f'];
+%   cfg.User{2}.SecureHELTFOctets = hexChars(randi([1 16], 1, 2*numOctets(2)));
+%
+%   disp(cfg);
+%
+%   See also heRangingWaveformGenerator, heRangingFieldIndices
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+properties (Access = 'public')
+    %ChannelBandwidth Channel bandwidth (MHz) of PPDU transmission
+    %   Specify the channel bandwidth as one of 'CBW20' | 'CBW40' | 'CBW80'
+    %   | 'CBW160'. The default value of this property is 'CBW20'.
+    ChannelBandwidth = 'CBW20';
+    %InactiveSubchannels Indicates punctured 20 MHz subchannels
+    %   Specify inactive 20 MHz subchannels as a logical vector. The number
+    %   of elements must be 1 or equal to the number of 20 MHz subchannels
+    %   given ChannelBandwidth. Set an element to true if a 20 MHz
+    %   subchannel is inactive (punctured). Subchannels are ordered from
+    %   lowest to highest absolute frequency. If a scalar is provided, this
+    %   value is assumed for all subchannels. This property applies only
+    %   when APEPLength is 0 and ChannelBandwidth is 'CBW80' or 'CBW160'.
+    %   At least one subchannel must be active. The default value for this
+    %   property is false.
+    InactiveSubchannels logical = false;
+    %User User properties of HE-LTF
+    %   Set the transmission properties of HE-LTF for each user in
+    %   the transmission. This property is a cell array of <a
+    %   href="matlab:help('heRangingUser')">heRangingUser</a> 
+    %   objects. Each element of the cell array contains properties to
+    %   configure the HE-LTF for a user.
+    User;
+    %SecureHELTF Type of HE-LTF sequence
+    %   Set this property to true to enable the generation of HE-LTF
+    %   symbols with secure HE-LTF sequence as defined in IEEE
+    %   802.11az-2022, Section 27.3.18b. When this property is set to
+    %   false, regular HE-LTFs as defined in IEEE 802.11ax-2021, Section
+    %   27.3.11.10 are used. This property is only applicable when the
+    %   HE-LTF contains symbols for single user. When the transmission
+    %   contains more than one user, the object sets this property to true.
+    %   The default is false.
+    SecureHELTF (1,1) logical = false;
+    %NumTransmitAntennas Number of transmit antennas
+    %   Specify the number of transmit antennas as a positive integer
+    %   scalar. The default is 1.
+    NumTransmitAntennas (1,1) {mustBeNumeric,mustBeInteger,mustBeGreaterThanOrEqual(NumTransmitAntennas,1)} = 1;
+    %PreHECyclicShifts Cyclic shift values for >8 transmit chains
+    %   Specify the cyclic shift values for the pre-HE portion of the
+    %   waveform, in nanoseconds, for >8 transmit antennas as a row vector
+    %   of length L = NumTransmitAntennas-8. The cyclic shift values must
+    %   be between -200 and 0 inclusive. The first 8 antennas use the
+    %   cyclic shift values defined in Table 21-10 of IEEE Std 802.11-2016.
+    %   The remaining antennas use the cyclic shift values defined in this
+    %   property. If the length of this row vector is specified as a value
+    %   greater than L the object only uses the first L, PreHECyclicShifts
+    %   values. For example, if you specify the NumTransmitAntennas
+    %   property as 16 and this property as a row vector of length N>L, the
+    %   object only uses the first L = 16-8 = 8 entries.
+    %   This property applies only for HE-LTF non-secure mode, when you set
+    %   the NumTransmitAntennas property to a value greater than 8 and
+    %   PreHESpatialMapping to false. The default value of this property is -75.
+    PreHECyclicShifts {mustBeNumeric,mustBeInteger,mustBeGreaterThanOrEqual(PreHECyclicShifts,-200),mustBeLessThanOrEqual(PreHECyclicShifts,0)} = -75;
+    %PreHESpatialMapping Indicate spatial mapping of pre-HE-STF portion
+    %   Set this property to true to spatially map the pre-HE-STF portion
+    %   of the PPDU the same way as the first symbol of the HE-LTF field on
+    %   each tone. Set to false to apply no spatial mapping to the
+    %   pre-HE-STF portion of the PPDU. The default value of this property
+    %   is false.
+    PreHESpatialMapping (1,1) logical = false;
+    %UplinkIndication Indicate uplink transmission
+    %   Set this property to true to indicate that the PPDU is sent on an
+    %   uplink transmission. The default value of this property is false,
+    %   which indicates a downlink transmission.
+    UplinkIndication (1,1) logical = false;
+    %BSSColor Basic service set (BSS) color identifier
+    %   Specify the BSS color identifier of a basic service set as an
+    %   integer scalar between 0 to 63, inclusive. The default is 0.
+    BSSColor (1,1) {mustBeNumeric,mustBeInteger,mustBeGreaterThanOrEqual(BSSColor,0),mustBeLessThanOrEqual(BSSColor,63)} = 0;
+    %TXOPDuration Duration information for TXOP protection
+    %   Specify the TXOPDuration signaled in HE-SIG-A as an integer scalar
+    %   between 0 and 127, inclusive. The TXOP field in HE-SIG-A is set
+    %   directly to TXOPDuration, therefore a duration in microseconds must
+    %   be converted before being used as specified in Table 27-18 of IEEE
+    %   802.11ax-2021. For more information see the <a href="matlab:doc('wlanHESUConfig')">documentation</a>.
+    TXOPDuration (1,1) {mustBeNumeric,mustBeInteger,mustBeGreaterThanOrEqual(TXOPDuration,0),mustBeLessThanOrEqual(TXOPDuration,127)} = 127;
+    %HighDoppler Indicate high-Doppler mode
+    %   Set this property to true to indicate high doppler in HE-SIG-A.
+    %   This property is only signaled in HE-SIG-A field as HE Ranging
+    %   NDP transmission contains no data field. The default value of this
+    %   property is false.
+    HighDoppler (1,1) logical = false;
+    %MidamblePeriodicity Midamble periodicity in number of OFDM symbols
+    %   Specify HE-Data field midamble periodicity as 10 or 20 OFDM
+    %   symbols. This property applies only when HighDoppler property is
+    %   set to true. This property is only signaled in HE-SIG-A field as HE
+    %   Ranging NDP transmission contains no data field. The default is 10.
+    MidamblePeriodicity (1,1) {mustBeNumeric,mustBeMember(MidamblePeriodicity,[10 20])} = 10;
+    %STBC Enable space-time block coding
+    %   Set this property to true to enable space-time block coding (STBC)
+    %   in the data field transmission. STBC can only be applied for two
+    %   space-time streams and when DCM is not used. This property is only
+    %   signaled in HE-SIG-A field as HE Ranging NDP transmission contains
+    %   no data field. The default value of this property is false.
+    STBC (1,1) logical = false;
+    %MCS Modulation and coding scheme
+    %   Specify the modulation and coding scheme as an integer scalar. Its
+    %   elements must be integers between 0 and 11, inclusive. This
+    %   property is only signaled in HE-SIG-A field as HE Ranging NDP
+    %   transmission contains no data field. The default value of this
+    %   property is 0.
+    MCS (1,1) {mustBeNumeric,mustBeInteger,mustBeGreaterThanOrEqual(MCS,0),mustBeLessThanOrEqual(MCS,11)} = 0;
+    %DCM Enable dual-carrier modulation for HE-Data field
+    %   Set this property to true to indicate that dual-carrier modulation
+    %   (DCM) is used for the HE-Data field. DCM can only be used with MCS
+    %   0, 1, 3, 4, when STBC is not used and when the number of space-time
+    %   streams is less than or equal to 2. This property is only signaled
+    %   in HE-SIG-A field as HE Ranging NDP transmission contains no data
+    %   field. The default value of this property is false.
+    DCM (1,1) logical = false;
+    %ChannelCoding Forward error correction coding type
+    %   Specify the channel coding as one of 'BCC' or 'LDPC' to indicate
+    %   binary convolution coding (BCC) or low-density-parity-check (LDPC)
+    %   coding, respectively. This property is only signaled in HE-SIG-A
+    %   field as HE Ranging NDP transmission contains no data field. The
+    %   default is 'LDPC'.
+    ChannelCoding = 'LDPC';
+    %FrequencyDomainWindowing Enable Frequency Domain Windowing
+    %   Set this property to true to enable the frequency domain windowing
+    %   for HE-LTF symbols with secure HE-LTF sequence as defined in IEEE
+    %   802.11az-2022, Section 27.3.18b. The default is false.
+    FrequencyDomainWindowing (1,1) logical = false;
+end
+
+properties (SetAccess = private)
+    %GuardInterval Guard interval type
+    %   This is a read-only property. Only 1.6us GI is supported.
+    GuardInterval = 1.6;
+    %HELTFType HE-LTF compression mode of HE Ranging NDP
+    %   This is a read-only property. Only 2xHE-LTF compression mode is
+    %   supported.
+    HELTFType = 2;
+    %Beamforming Beamforming indication
+    %   This is a read-only property. Beamforming is not supported.
+    Beamforming = false;
+    %APEPLength APEP length
+    %   This is a read-only property. Only APEPLength of 0 is supported.
+    APEPLength = 0;
+    %SpatialReuse Spatial reuse indication
+    %   This is a read-only property. Only SpatialReuse of 15 is
+    %   supported.
+    SpatialReuse = 15;
+end
+
+properties(Dependent,Hidden)
+    %SpatialMappingMatrix Spatial mapping matrix
+    %   Spatial mapping matrix is of size Nsts-by-Nt, where Nsts
+    %   is the maximum number of space-time streams between all users and
+    %   Nt is the number of transmit antennas. The SpatialMappingMatrix is
+    %   an identity matrix when Nsts=Nt. When Nsts<Nt, the
+    %   SpatialMappingMatrix is an identity matrix with all zero rows
+    %   removed.
+    SpatialMappingMatrix;
+    %NumSpaceTimeStreams Maximum number of space-time streams
+    %   The maximum number of space-time streams between all users.
+    NumSpaceTimeStreams (1,1);
+end
+
+properties(Constant,Hidden)
+    NominalPacketPadding = 0;
+    SpatialMapping = 'Custom';
+    ChannelBandwidth_Values = {'CBW20','CBW40','CBW80','CBW160'};
+    ChannelCoding_Values = {'BCC','LDPC'};
+end
+
+methods
+    function obj = heRangingConfig(varargin)
+        narginchk(0,Inf);
+        if mod(nargin,2)==1 % Odd number of inputs
+            numUsers = varargin{1};
+            validateattributes(numUsers(1),{'numeric'},{'scalar','>=',1,'<=',64});
+            startInd = 2;
+        else % Even number of inputs
+             numUsers = 1;
+             coder.internal.errorIf((mod(nargin,2)~=0),'wlan:ConfigBase:InvalidPVPairs');
+             if nargin>0 && ~(ischar(varargin{1})||isstring(varargin{1}))
+                error('Invalid input combination');
+             end
+             startInd = 1;
+        end
+        for i=startInd:2:nargin-1
+             if strcmp(varargin{i},'User')
+                error('You cannot set the User property with a Name-Value pair');
+             end
+        end
+
+        % For codegen set maximum dimensions to force varsize
+        if ~isempty(coder.target)
+            channelBandwidth = 'CBW20';
+            coder.varsize('channelBandwidth',[1 6],[0 1]); % Add variable-size support
+            obj.ChannelBandwidth = channelBandwidth; % Default
+
+            channelCoding = 'LDPC';
+            coder.varsize('channelCoding',[1 4],[0 1]); % Add variable-size support
+            obj.ChannelCoding = channelCoding; % Default
+        end
+        obj = setProperties(obj,varargin{startInd:end}); % Supperclass method for NV pair parsing
+
+        obj.User = createUsers(numUsers(1)); % For codegen
+
+        % Set SecureHELTF to true when number of users > 1
+        if numUsers>1
+            obj.SecureHELTF = true;
+        end
+    end
+
+    function obj = set.ChannelBandwidth(obj,val)
+        val = validateEnumProperties(obj,'ChannelBandwidth',val);
+        obj.ChannelBandwidth = val;
+    end
+
+    function obj = set.ChannelCoding(obj,val)
+        val = validateEnumProperties(obj,'ChannelCoding',val);
+        obj.ChannelCoding = val;
+    end
+
+	function val = get.SpatialMappingMatrix(obj)
+        S = ruInfo(obj);
+        % Set spatial mapping matrix to an identity matrix as defined in
+        % IEEE 802.11az-2022, Section 27.3.18b.
+        val = eye(S.NumSpaceTimeStreamsPerRU,obj.NumTransmitAntennas);
+    end
+
+    function val = get.NumSpaceTimeStreams(obj)
+        % Maximum number of space-time stream for all users
+        s = heRangingLTFInfo(obj);
+        val = s.MaxNSTS;
+    end
+
+    function obj = set.User(obj,value)
+    %Validate User property is a cell array of heRangingUser objects
+
+        validateattributes(value,{'cell'},{'nonempty'},mfilename,'User');
+
+        numInp = numel(value);
+        for i = 1:numInp
+            coder.internal.errorIf(~isa(value{i},'heRangingUser'),'wlan:shared:InvalidUser',numInp,'heRangingUser');
+        end
+        obj.User = value;
+    end
+
+    function format = packetFormat(obj) %#ok<MANU>
+    %packetFormat Returns the packet format
+    %   Returns the packet format as a character vector. Packet format is
+    %   'HE-SU'.
+
+       format = 'HE-SU';
+    end
+
+    function t = transmitTime(obj,varargin)
+    %transmitTime Returns the time required to transmit a packet
+    %   T = transmitTime(CFG) returns the time required to transmit a
+    %   packet in seconds.
+    %
+    %   T = transmitTime(CFG,UNIT) returns the transmit time in the
+    %   requested unit. UNIT must be 'seconds', 'milliseconds',
+    %   'microseconds', or 'nanoseconds'.
+
+        narginchk(1,2);
+        [~,t] = wlan.internal.hePLMETxTimePrimative(obj);
+        t = t*1e-3; % Scale from nanoseconds to microseconds
+        t = wlan.internal.convertTransmitTime(t,varargin{:});
+    end
+
+    function numHELTFSym = numHELTFSymbols(obj)
+    %numHELTFSymbols Number of HE-LTF symbols
+    %   Returns the number of HE-LTF symbols for the given object
+    %   configuration
+
+        hezInfo = heRangingLTFInfo(obj);
+        numHELTFSym = hezInfo.NHELTF;
+    end
+
+    function numSecureOctets = numSecureHELTFOctets(obj)
+    %numSecureHELTFOctets Number of secure HE-LTF octets
+    %   numSecureOctets is a vector of size 1-by-NumUsers
+    %   Returns the number of secure HE-LTF octets required to generate the
+    %   secure HE-LTF symbols for the given configuration for all users.
+
+        if obj.SecureHELTF
+            hezInfo = heRangingLTFInfo(obj);
+            numSecureOctets = hezInfo.NSecureHELTFOctets;
+        else % NonSecure HE-LTF
+            numSecureOctets = 0;
+        end
+    end
+
+    function s = ruInfo(obj)
+    %ruInfo Returns information relevant to the resource unit
+    %   S = ruInfo(cfgHEz) returns a structure, S, containing the resource
+    %   unit (RU) allocation information for the heRangingConfig object,
+    %   cfgHEz. The output structure S has the following fields:
+    %
+    %   NumUsers                 - Number of users (1)
+    %   NumRUs                   - Number of RUs (1)
+    %   RUIndices                - Index of the RU (1)
+    %   RUSizes                  - Size of the RU
+    %   NumUsersPerRU            - Number of users per RU (1)
+    %   NumSpaceTimeStreamsPerRU - Maximum number of space-time streams
+    %   PowerBoostFactorPerRU    - Power boost factor (1)
+    %   RUNumbers                - RU number (1)
+
+        heLTFInfo = heRangingLTFInfo(obj);
+        s = struct;
+        s.NumUsers = 1;
+        s.NumRUs = 1;
+        s.RUIndices = 1;
+        s.RUSizes = wlan.internal.heFullBandRUSize(obj.ChannelBandwidth);
+        s.NumUsersPerRU = 1;
+        s.NumSpaceTimeStreamsPerRU = heLTFInfo.MaxNSTS;
+        s.PowerBoostFactorPerRU = 1;
+        s.RUNumbers = 1;
+    end
+
+    function showAllocation(obj,varargin)
+    %showAllocation Shows the RU allocation
+    %   showAllocation(obj) shows the RU allocation for an HE Ranging NDP
+    %   packet format.
+    %
+    %   showAllocation(obj,AX) shows the allocation in the axes specified
+    %   by AX instead of in the current axes.
+
+        wlan.internal.validateInactiveSubchannels(obj);
+        wlan.internal.hePlotAllocation(obj,varargin{:});
+    end
+
+    function [s,heLTFInfo] = validateConfig(obj)
+    %validateConfig Validate the dependent properties of heRangingConfig object
+    %   validateConfig(obj) validates the dependent properties for the
+    %   specified heRangingConfig configuration object.
+    %   It returns the a struct for MCS and length information and a
+    %   heLTFInfo.
+    %
+    %   For INTERNAL use only, subject to future changes
+    %
+
+        % Validate PreHECyclicShifts against NumTransmitAntennas
+        if ~isInactiveProperty(obj,'PreHECyclicShifts')
+            coder.internal.errorIf(numel(obj.PreHECyclicShifts)<obj.NumTransmitAntennas-8, ...
+                'wlan:shared:InvalidCyclicShift','PreHECyclicShifts',obj.NumTransmitAntennas-8);
+        end
+
+        % Validate inactive sub channels
+        if ~isInactiveProperty(obj,'InactiveSubchannels')
+            % Puncturing is only applicable for HE SU NDP
+            wlan.internal.validateInactiveSubchannels(obj);
+        end
+        heLTFInfo = heRangingLTFInfo(obj);
+        % Validate number of HE-LTF symbols
+        if heLTFInfo.NHELTF>64
+            error('Number of HE-LTF symbols should be less than or equal to 64');
+        end
+
+        % Validate secure HE-LTF symbols against NumUsers. For secure HE-LTF
+        % the NumUsers must be greater than 1.
+        if heLTFInfo.NUsers>1 && ~obj.SecureHELTF
+            error('SecureHELTF must be true when NumUser is greater than 1');
+        end
+
+        % Validate NumTransmitAntennas and NumSpaceTimeStreams
+        if heLTFInfo.MaxNSTS>obj.NumTransmitAntennas
+        	error('NumSpaceTimeStreams for any user must not be larger than NumTransmitAntennas');
+        end
+
+        % Validate MCS and length
+        [psduLength,txTime,commonCodingParams] = wlan.internal.hePLMETxTimePrimative(obj);
+        sf = 1e3; % Scaling factor to convert time from ns to us
+        % Set output structure
+        s = struct( ...
+            'NumDataSymbols', commonCodingParams.NSYM, ...
+            'TxTime', txTime/sf, ...% TxTime in us
+            'PSDULength', psduLength);
+
+        % Validate NumHELTFRepetitions. The number of HE-LTF repetitions should be greater than one for secure HE-LTF
+        if obj.SecureHELTF && any(heLTFInfo.NRepetitions<2)
+            error('Number of HE-LTF repetitions for the user must be greater than 1 for secure HE-LTF');
+        end
+    end
+end
+
+methods (Access = protected)
+    function flag = isInactiveProperty(obj, prop)
+        switch prop
+            case 'MidamblePeriodicity'
+                % Hide MidamblePeriodicity when HighDoppler is not set
+                flag = obj.HighDoppler == false;
+            case 'InactiveSubchannels'
+                % Hide InactiveSubchannels for non-NDP packet when ChannelBandwidth is CBW20 and CBW40
+                flag = ~any(strcmp(obj.ChannelBandwidth,{'CBW80','CBW160'}));
+            case 'PreHECyclicShifts'
+                % Hide PreHECyclicShifts when NumTransmitAntennas <=8 or pre-HE spatial mapping is used or for secure HE-LTF
+                flag = obj.NumTransmitAntennas <= 8 || obj.PreHESpatialMapping == true ||obj.SecureHELTF == true;
+            case 'FrequencyDomainWindowing'
+                % Hide FrequencyDomainWindowing when not using secure HE-LTF.
+                flag = ~obj.SecureHELTF;
+            otherwise
+                flag = false;
+        end
+    end
+end
+
+end
+
+function user = createUsers(numUsers)
+%createUsers User object for HE-LTF field
+
+    % Returns a cell array of Users
+    Usertmp = cell(1,numUsers);
+    for userIdx = 1:numUsers
+        Usertmp{userIdx} = heRangingUser();
+    end
+    user = Usertmp;
+end
+
+./libs/heRangingCorrelationMatrixEstimate.m
+
+function R = heRangingCorrelationMatrixEstimate(CFR)
+%heRangingCorrelationMatrixEstimate Estimates the correlation matrix
+%
+%   R = heRangingCorrelationMatrixEstimate(CFR) estimates a
+%   spatially-smoothed and forward-backward averaged correlation matrix R
+%   from a CFR (Channel Frequency Response)
+%
+%   CFR is a complex matrix of size N-by-P where N is the length of a FFT
+%   of a single CFR snapshot and P is the number of snapshots. CFR
+%   represents the channel frequency response.
+%
+%   R is a complex L-by-L matrix representing the estimated correlation
+%   matrix.
+
+%   Copyright 2020 The MathWorks, Inc.
+
+% Correlation matrix estimated as per Xinrong Li and K. Pahlavan
+% Super-resolution TOA estimation with diversity for indoor geolocation.
+% IEEE Transactions on Wireless Communications, vol. 3, no. 1, pp. 224-234,
+% Jan. 2004
+
+[N, P] = size(CFR); % P is the number of snapshots, N is the FFT length
+L = round(2/3*N); % length of the subarrays for spatial smoothing
+M = N-L+1; % number of subarrays
+R = complex(zeros(L,L)); % Correlation matrix
+
+if P==1 % Single CFR snapshot
+    
+    % Perform spatial-smoothing
+    for k = 1:M
+        subArray = CFR(k:k+L-1);
+        R = subArray*subArray' + R;
+    end
+    R = R/M;
+    
+else % Multiple CFR snapshots
+    
+    Rn = complex(zeros(N,N));
+    for k = 1:P
+        Rn = CFR(:,k)*CFR(:,k)' + Rn;
+    end
+    Rn = Rn/P;
+    
+    % Spatial smoothing
+    for k = 1:M
+        R = R+ Rn(k:k+L-1,k:k+L-1);
+    end
+    R = R/M;
+    
+end
+J = fliplr(eye(L));
+R = (R+J*conj(R)*J)/2; % Forward-backward averaging
+
+end
+./libs/heRangingDemodulate.m
+
+function demod = heRangingDemodulate(rx,cfg,varargin)
+%heRangingDemodulate Demodulate HE-LTF
+%   DEMOD = heRangingDemodulate(RX,CFG) demodulates the time-domain HE-LTF
+%   signal RX using OFDM demodulation parameters.
+%
+%   DEMOD is the demodulated frequency-domain signal, returned as a complex
+%   matrix or 3-D array of size Nst-by-Nsym-by-Nr. Nst is the number of
+%   active (occupied) subcarriers in the field. Nsym is the number of OFDM
+%   symbols. Nr is the number of receive antennas.
+%
+%   RX is the received time-domain signal, specified as a complex matrix of
+%   size Ns-by-Nr, where Ns represents the number of time-domain samples.
+%   If Ns is not an integer multiple of the OFDM symbol length for the
+%   specified field, then mod(Ns,symbol length) trailing samples are
+%   ignored.
+%
+%   CFG is a format configuration object of type <a href="matlab:help('heRangingConfig')">heRangingConfig</a>.
+%
+%   DEMOD = heRangingDemodulate(...,'OversamplingFactor',OSF) specifies the
+%   optional oversampling factor of the waveform to demodulate. The
+%   oversampling factor must be greater than or equal to 1. The default
+%   value is 1. Specifying an oversampling factor greater than 1 uses a
+%   larger FFT size to demodulate the oversampled waveform. The
+%   oversampling factor must result in an integer number of samples in the
+%   cyclic prefix.
+%
+%   DEMOD = heRangingDemodulate(...,'OFDMSymbolOffset',SYMOFFSET) specifies
+%   the optional OFDM symbol sampling offset as a fraction of the guard
+%   interval length between 0 and 1, inclusive. When unspecified, a value
+%   of 0.75 is used.
+%
+%   Examples:
+%
+%   Example 1:
+%   % Demodulate the HE-LTF field of an HE Ranging waveform for a single
+%   % user.
+%
+%      % Generate waveform
+%      cfg = heRangingConfig;
+%      tx = heRangingWaveformGenerator(cfg,'WindowTransitionTime',0);
+%
+%      % Generate field indices and extract HE-LTF
+%      ind = heRangingFieldIndices(cfg,'HE-LTF');
+%      heltf = tx(ind(1):ind(2),:);
+%
+%      % Demodulate HE-LTF field
+%      demodLTF = heRangingDemodulate(heltf,cfg);  
+%
+%   Example 2:
+%   % Demodulate the HE-LTF field of an HE Ranging waveform for two users.
+%
+%      % Configure users
+%      cfg = heRangingConfig(2);
+%      cfg.User{1}.NumHELTFRepetitions = 2;
+%      cfg.User{1}.SecureHELTFOctets = 'a2b3';
+%      cfg.User{2}.NumHELTFRepetitions = 3;
+%      cfg.User{2}.SecureHELTFOctets = 'c4d5';
+%
+%      % Generate waveform
+%      tx = heRangingWaveformGenerator(cfg,'WindowTransitionTime',0);
+%
+%      % Generate field indices and extract HE-LTF
+%      ind = heRangingFieldIndices(cfg,'HE-LTF');
+%
+%      % Demodulate HE-LTF field for user-1
+%      heltf = tx(ind(1,1):ind(1,2),:);
+%      demodLTFUser1 = heRangingDemodulate(heltf,cfg); 
+%
+%      % Demodulate HE-LTF field for user-2
+%      heltf = tx(ind(2,1):ind(2,2),:);
+%      demodLTFUser2 = heRangingDemodulate(heltf,cfg); 
+%
+%   See also heLTFRangingChannelEstimate
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+narginchk(2,6);
+
+% Validate the format configuration object is a valid type
+validateattributes(cfg,{'heRangingConfig'},{'scalar'},mfilename,'format configuration object');
+
+% Validate rx and field name
+validateattributes(rx,{'double','single'},{'2d','finite','nonempty'},mfilename,'rx');
+[numSamples,numRx] = size(rx);
+
+nvp = wlan.internal.demodNVPairParse(varargin{:});
+
+infoRU = ruInfo(cfg);
+cfgOFDM = wlanHEOFDMInfo('HE-LTF',cfg.ChannelBandwidth,cfg.GuardInterval,[infoRU.RUSizes infoRU.RUIndices],'OversamplingFactor',nvp.OversamplingFactor);
+
+uncompFFTLength = cfgOFDM.FFTLength;
+N_HE_LTF_Mode = cfg.HELTFType;
+compFFTLength = uncompFFTLength/N_HE_LTF_Mode;
+
+% Calculate number of symbols to demodulate
+Ns = compFFTLength+cfgOFDM.CPLength;
+
+% Validate input length
+validateMinInputLength(numSamples,Ns,cfgOFDM.CPLength,cfg.SecureHELTF);
+
+numSym = floor(numSamples/Ns);
+numSamples = numSym*(compFFTLength+cfgOFDM.CPLength);
+% OFDM demodulate
+prmStr = struct;
+prmStr.NumReceiveAntennas = numRx;
+prmStr.FFTLength = compFFTLength; % Use compressed FFT length
+prmStr.NumSymbols = numSym;
+prmStr.SymbolOffset = round(nvp.SymOffset*cfgOFDM.CPLength);
+prmStr.CyclicPrefixLength = cfgOFDM.CPLength;
+compressedfftout = coder.nullcopy(complex(zeros(compFFTLength,numSym,numRx,'like',rx))); % For codegen
+
+if cfg.SecureHELTF
+    numSamples = numSamples+cfgOFDM.CPLength; % Account for trailing guard interval after last OFDM symbol
+    compressedfftout(:) = zpDemodulate(rx(1:numSamples,:),prmStr);
+else
+    compressedfftout(:) = comm.internal.ofdm.demodulate(rx(1:numSamples,:),prmStr);
+end
+
+% Decompress HE-LTF
+fftout = complex(zeros(uncompFFTLength,numSym,numRx,'like',rx));
+fftout(1:N_HE_LTF_Mode:end,:,:) = compressedfftout;
+
+% Extract active subcarriers from full FFT
+demod = fftout(cfgOFDM.ActiveFFTIndices,:,:);
+
+% Scale by number of tones and FFT length at transmitter
+demod = demod*sqrt(cfgOFDM.NumTones/N_HE_LTF_Mode)/compFFTLength;
+end
+
+
+function validateMinInputLength(numSamples,Ns,cpLen,secureHELTF)
+% Validate number of input samples
+
+    if secureHELTF
+        Ns = Ns+cpLen;
+    end
+
+    minInputLength = sum(Ns);
+    coder.internal.errorIf(numSamples>0 && numSamples<minInputLength,'wlan:shared:ShortDataInput',minInputLength);
+end
+
+function y = zpDemodulate(x,prmStr)
+%   Y = zpDemodulate(X,PRMSTR) performs OFDM demodulation on input X, using
+%   the parameters specified in the structure PRMSTR.
+%
+%   Y is the demodulated frequency-domain signal, returned as a complex
+%   matrix or 3-D array of size Nst-by-Nsym-by-Nr. Nst is the number of
+%   subcarriers in the field. Nsym is the number of OFDM symbols. Nr is the
+%   number of receive antennas.
+%
+%   X is the time-domain signal, specified as a complex matrix of size
+%   Ns-by-Nr, where Ns represents the number of time-domain samples.
+%
+%   PRMSTR is a structure with the following fields:
+%       FFTLength
+%       CyclicPrefixLength
+%       NumSymbols
+%       SymbolOffset
+%       NumReceiveAntennas
+
+    fftLen = prmStr.FFTLength;
+    giLen  = prmStr.CyclicPrefixLength(1);
+    symOffset = prmStr.SymbolOffset;
+    symLength = fftLen+giLen; % OFDM Symbol length in samples
+    NSYM = prmStr.NumSymbols;
+    NRX = size(x,2);
+
+    % Discard initial guard interval accounting for OFDM symbol offset
+    todemod = reshape(x(symOffset+1:(end-(giLen-symOffset)),:),[symLength,NSYM,NRX]);
+
+    % Overlap start of the symbol with the next guard interval
+    todemod(1:giLen,:,:) = todemod(1:giLen,:,:)+todemod(fftLen+(1:giLen),:,:);
+
+    % Remove GI
+    todemod = todemod(1:fftLen,:,:);
+
+    % Move symbol offset samples to end of symbol to maintain phase
+    todemod = [todemod((giLen-symOffset)+1:fftLen,:,:); todemod(1:(giLen-symOffset),:,:)];
+
+    % FFT
+    postFFT = fft(todemod,[],1);
+    y = fftshift(postFFT,1);
+end
+./libs/heRangingFieldIndices.m
+
+function indices = heRangingFieldIndices(cfgFormat,varargin)
+%heRangingFieldIndices Generate field indices for an HE Ranging packet
+%   INDICES = heRangingFieldIndices(CFGFORMAT) returns the start and end
+%   time-domain sample indices for all fields in a packet relative to the
+%   first sample.
+%
+%   INDICES is a structure array of field names for the specified
+%   configuration and contains the start and end indices of all fields in a
+%   packet.
+%
+%   CFGFORMAT is a format configuration object of type <a href="matlab:help('heRangingConfig')">heRangingConfig</a>.
+%
+%   INDICES = heRangingFieldIndices(CFGFORMAT,FIELDNAME) returns the start
+%   and end time-domain sample indices for the specified FIELDNAME in a
+%   packet. INDICES is a row vector of size two representing the start and
+%   end sample indices of the specified field.
+%
+%   FIELDNAME is a character vector or string specifying the field of
+%   interest.
+%
+%   The field of interest must be 'L-STF', 'L-LTF', 'L-SIG', 'RL-SIG',
+%   'HE-SIG-A', HE-SIG-B', 'HE-STF','HE-LTF','HE-Data' or 'HE-PE'.
+%
+%   When you specify a secure HE-LTF, the function returns the field
+%   indices as a matrix of size R-by-2, where R is the number of users.
+%   Each row of a matrix represents the start and end indices of the HE-LTF
+%   for a user including the zero-power GI after the last HE-LTF symbol.
+%
+%   INDICES = heRangingFieldIndices(...,'OversamplingFactor',OSF) returns the
+%   start and end time-domain sample indices of a single field or all
+%   fields in a packet oversampled by a factor of OSF. OSF must be >= 1,
+%   and the resultant indices must be integer. The default is 1.
+%
+%   Example 1:
+%   %   Extract the HE-LTF field for a received HE Ranging transmission.
+%
+%      cfg = heRangingConfig; % Create packet configuration
+%
+%      % Generate transmit waveform
+%      txWaveform = heRangingWaveformGenerator(cfg);
+%
+%      % Recover HE-LTF field
+%      ind = heRangingFieldIndices(cfg);
+%      rxHELTF = txWaveform(ind.HELTF(1):ind.HELTF(2));
+%
+%   Example 2:
+%   %   Extract the HE-LTF field from an HE Ranging packet for multiple
+%   %   users.
+%
+%      % Create packet configuration
+%      cfg = heRangingConfig(2);
+%
+%      % Generate transmit waveform
+%      txWaveform = heRangingWaveformGenerator(cfg);
+%
+%      % Recover HE-LTF for user-2
+%      heLTFIdx = heRangingFieldIndices(cfg,'HE-LTF');
+%      rxHELTF = txWaveform(heLTFIdx(2,1):heLTFIdx(2,2));
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+% Validate input is a class object
+validateattributes(cfgFormat,{'heRangingConfig'},{'scalar'},mfilename,'format configuration object');
+narginchk(1,4)
+if any(nargin == [1 3])
+    osf = wlan.internal.parseOSF(varargin{:});
+    indices = getHEIndices(cfgFormat,osf);
+else
+    fieldType = varargin{1};
+    osf = wlan.internal.parseOSF(varargin{2:end});
+    coder.internal.errorIf(~(ischar(fieldType) || (isstring(fieldType) && isscalar(fieldType))) || ... 
+            ~any(strcmpi(fieldType,{'L-STF','L-LTF','L-SIG','RL-SIG','HE-SIG-A','HE-SIG-B','HE-STF','HE-LTF','HE-Data','HE-PE'})), ...
+            'wlan:wlanFieldIndices:InvalidFieldTypeHE');
+    indices = getHEIndices(cfgFormat,osf,fieldType);
+end
+end
+
+function ind = getHEIndices(cfg,osf,varargin)
+
+    validateConfig(cfg);
+    trc = wlan.internal.heTimingRelatedConstants(cfg.GuardInterval,cfg.HELTFType,4,0,0); % Use default preFEC padding factor
+    cbw = wlan.internal.cbwStr2Num(cfg.ChannelBandwidth);
+    sf = cbw*1e-3*osf; % Scaling factor to convert bandwidth and time in ns to samples
+
+    % L-STF
+    nFieldSamples = trc.TLSTF*sf;
+    indLSTF = uint32([1 nFieldSamples]);
+    numCumSamples = nFieldSamples;
+
+    if nargin>2 && strcmp(varargin{1},'L-STF')
+        ind = indLSTF;
+        return;
+    end
+
+    % L-LTF
+    nFieldSamples = trc.TLLTF*sf;
+    indLLTF = uint32([numCumSamples+1 numCumSamples+nFieldSamples]);
+    numCumSamples = numCumSamples+nFieldSamples;
+    nFieldSamples = trc.TLSIG*sf;
+
+    if nargin>2 && strcmp(varargin{1},'L-LTF')
+        ind = indLLTF;
+        return;
+    end
+
+    % L-SIG
+    indLSIG = uint32([numCumSamples+1 numCumSamples+nFieldSamples]);
+    numCumSamples = numCumSamples+nFieldSamples;
+    if nargin>2 && strcmp(varargin{1},'L-SIG')
+        ind = indLSIG;
+        return;
+    end
+
+    nFieldSamples = trc.TRLSIG*sf;
+    indRLSIG = uint32([numCumSamples+1 numCumSamples+nFieldSamples]);
+    numCumSamples = numCumSamples+nFieldSamples;
+    if nargin>2 && strcmp(varargin{1},'RL-SIG')
+        ind = indRLSIG;
+        return;
+    end
+
+    % HE-SIG-A
+    nFieldSamples = trc.THESIGA*sf;
+    indHESIGA = uint32([numCumSamples+1 numCumSamples+nFieldSamples]);
+    numCumSamples = numCumSamples+nFieldSamples;
+
+    if nargin>2 && strcmp(varargin{1},'HE-SIG-A')
+        ind = indHESIGA;
+        return;
+    end
+
+    % HE-SIG-B
+    nFieldSamples = 0;
+    indHESIGB = zeros(0,2,'uint32');
+    numCumSamples = numCumSamples+nFieldSamples;
+ 
+    if nargin>2 && strcmp(varargin{1},'HE-SIG-B')
+        ind = indHESIGB;
+        return;
+    end
+
+    % HE-STF
+    nFieldSamples = trc.THESTFNT*sf;
+    indHESTF = uint32([numCumSamples+1 numCumSamples+nFieldSamples]);
+    numCumSamples = numCumSamples+nFieldSamples;
+
+    if nargin>2 && strcmp(varargin{1},'HE-STF')
+        ind = indHESTF;
+        return;
+    end
+
+    % HE-LTF
+    S = heRangingLTFInfo(cfg);
+    samplePerSym = trc.THELTFSYM*sf;
+
+    N = [0 cumsum(S.NHELTFWithRepetition)];
+    startIndex = numCumSamples+1+N(1:end-1).*samplePerSym;
+    endIndex = numCumSamples+N(2:end).*samplePerSym;
+    % Append start and end indices of HELTF field
+    if cfg.SecureHELTF
+        numUsers = numel(cfg.User);
+        cpLen = trc.TGIData*sf;
+        if numUsers>1
+            % The end index includes the zero-power GI after the last user HE-LTF symbol
+            indHELTF = uint32([startIndex.' (endIndex+cpLen).']);
+        else
+            indHELTF = uint32([startIndex endIndex+cpLen]);
+        end
+    else
+        indHELTF = uint32([startIndex endIndex]);
+    end
+    numCumSamples = endIndex(end);
+
+    if nargin>2 && strcmp(varargin{1},'HE-LTF')
+        ind = indHELTF;
+        return;
+    end
+
+    % HE-Data
+    indHEData = zeros(0,2,'uint32');
+
+    % HE-PE
+    nFieldSamples = trc.TPE*sf;
+    indHEPE = uint32([numCumSamples+1 numCumSamples+nFieldSamples]);
+
+    if nargin>2 && strcmp(varargin{1},'HE-LTF')
+        ind = indHELTF;
+        return;
+    end
+
+    if nargin>2 && strcmp(varargin{1},'HE-Data')
+        ind = indHEData;
+        return;
+    end
+
+    if (nargin>2 && strcmp(varargin{1},'HE-PE'))
+        ind = indHEPE;
+        return;
+    end
+
+    if nargin==2
+        % Return indices for all fields
+        indField = struct;
+        indField.LSTF = indLSTF;
+        indField.LLTF = indLLTF;
+        indField.LSIG = indLSIG;
+        indField.RLSIG = indRLSIG;
+        indField.HESIGA = indHESIGA;
+        indField.HESIGB = indHESIGB;
+        indField.HESTF = indHESTF;
+        indField.HELTF = indHELTF;
+        indField.HEData = indHEData;
+        indField.HEPE = indHEPE;
+
+        ind = indField;
+    else
+        ind = zeros(0,2,'uint32'); % For codegen
+    end
+end
+
+./libs/heRangingFrequencyDomainWindow.m
+
+function fdw = heRangingFrequencyDomainWindow(Nfft,kNz)
+%heRangingFrequencyDomainWindow HE Ranging Frequency Domain Window
+%   fdw = heRangingFrequencyDomainWindow(Nfft,kNz) generates the frequency
+%   domain windowing samples as defined in 802.11az-2022, Equation 27-126g.
+%
+%   fdw are the samples of frequency domain window function.It is a complex
+%   vector of size Nfft-by-1 where Nfft represents the FFT size.
+%
+%   kNz are the indices of non-zero subcarriers for the given a given
+%   bandwidth. It is a vector of size numNz-by-1 where numNz are the number
+%   of non-zero subcarriers.
+
+%   Copyright 2023 The MathWorks, Inc.
+
+%#codegen
+
+assert(mod(Nfft,2)==0,"Nfft size must be an even number")
+n = -10:10;
+Nfd = 2*Nfft; % Equation 27-126h
+k = -Nfft/2:Nfft/2-1;
+pn = flattopwin(numel(n)); % Equatation 27-126i
+wfd = sum(pn'.*exp(-1i*pi*k'*n/Nfd),2); % Equation 27-126g
+wfdRMS = rms(wfd(kNz+Nfft/2+1));
+fdw = wfd./wfdRMS; % Normalized to have unit RMS power
+end
+./libs/heRangingLTF.m
+
+function y = heRangingLTF(cfg,osf)
+%heRangingLTF HE Ranging NDP Long Training Field (HE-LTF)
+%   Y = heRangingLTF(CFG) generates an HE Ranging Long Training Field
+%   (HE-LTF) time-domain signal for the HE Ranging NDP format as defined in
+%   IEEE 802.11az-2022 standard.
+%
+%   Y is the time-domain HE-LTF signal. It is a complex matrix of size
+%   Ns-by-Nt where Ns represents the number of time-domain samples and Nt
+%   represents the number of transmit antennas.
+%
+%   CFG is the format configuration object of type <a href="matlab:help('heRangingConfig')">heRangingConfig</a>
+%
+%   Y = heLTF(CFG,OSF) generates the HE-LTF for the given oversampling
+%   factor OSF. When not specified 1 is assumed.
+%
+%   % Example: Generate an HE Ranging LTF field for a 80MHz.
+%
+%   cfg = heRangingConfig('ChannelBandwidth','CBW80');
+%   y = heRangingLTF(cfg);
+%   plot(abs(y));
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+validateattributes(cfg,{'heRangingConfig'},{'scalar'},mfilename,'Configuration object');
+[~,heLTFInfo] = validateConfig(cfg);
+numTx = cfg.NumTransmitAntennas;
+cbw = wlan.internal.cbwStr2Num(cfg.ChannelBandwidth);
+numUsers = heLTFInfo.NUsers; % Number of user in HE-LTF field
+allocationInfo = ruInfo(cfg); % RU allocation info
+Nltf = heLTFInfo.NHELTF; % Number of HE-LTF symbols
+maxNumSpaceTimeStream = heLTFInfo.MaxNSTS; % Max number of space-time streams between all users
+
+if nargin<2
+    osf = 1;
+end
+
+phaseRotation = zeros(1,1); % For codegen
+kNz = zeros(1,0); % For codegen
+secureMode = cfg.SecureHELTF;
+if secureMode
+    % Get HE-LTF secure sequence. IEEE 802.11az-2022, Section 27.3.18b
+    [HELTF,kHELTFSeq,kNz,phaseRotation] = heSecureLTFSequence(cfg); % HELTF is of size kHELTFSeq-by-Nltf
+else
+    % Get HE-LTF sequence. IEEE 802.11ax-2021, Section 27.3.11.10
+    [HELTF,kHELTFSeq] = wlan.internal.heLTFSequence(cbw,cfg.HELTFType); % HELTF is of size kHELTFSeq-by-1
+end
+
+Nfft = 256*cbw/20;
+ofdmGrid = complex(zeros(Nfft,Nltf,numTx));
+kRUPuncture = wlan.internal.hePuncturedRUSubcarrierIndices(cfg);
+
+% Extract the RU of interest from the full-bandwidth HE-LTF
+kRUFull = wlan.internal.heRUSubcarrierIndices(cbw,allocationInfo.RUSizes(1),allocationInfo.RUIndices(1));
+if ~isempty(kRUPuncture)
+    kRU = setdiff(kRUFull,kRUPuncture); % Discard punctured subcarriers
+else
+    kRU = kRUFull;
+end
+[~,ruIdx] = intersect(kHELTFSeq,kRU);
+HELTFRU = HELTF(ruIdx,:);
+
+% Create mapping matrix for all HE-LTF symbols per user
+% Generate P and R matrix for all HE-LTF symbols within an HE-LTF field
+PRep = complex(zeros(maxNumSpaceTimeStream,Nltf));
+RRep = complex(zeros(maxNumSpaceTimeStream,Nltf));
+heltfSymOffset = [0 cumsum(heLTFInfo.NHELTFWithRepetition)];
+numLTF = heLTFInfo.NHELTFWithoutRepetition;
+
+powerBoostFactor = 1; % No additional power boost (alpha)
+cardKr = numel(kRU);
+cardKHELTFr = cardKr/cfg.HELTFType;
+userSTSScalingFactor = zeros(1,Nltf);
+scalingConstant = powerBoostFactor*sqrt(cardKr);
+
+for u = 1:numUsers
+    % Mapping matrix for all symbols and users. IEEE 802.11ax-2021,
+    % Equation 27-57
+    numSTS = heLTFInfo.NSTS(u);
+    numRep = heLTFInfo.NRepetitions(u);
+    % Calculate P and R values in a matrix
+    Pheltf = wlan.internal.mappingMatrix(numLTF(u));
+    % Get P matrix for the number of HE-LTF symbols
+    P = Pheltf((1:numSTS).',1:numLTF(u));
+    % Same P matrix is used for all the repeated HE-LTF symbols
+    P = repmat(P,1,numRep);
+    PRep(1:numSTS,(1:heLTFInfo.NHELTFWithRepetition(u))+heltfSymOffset(u)) = P;
+    % Get R matrix for the number of space-time streams
+    R = repmat(Pheltf(1,1:numLTF(u)),numSTS,1);
+    % Same R matrix is used for all the repeated HE-LTF symbols
+    R = repmat(R,1,numRep);
+    RRep(1:numSTS,(1:heLTFInfo.NHELTFWithRepetition(u))+heltfSymOffset(u)) = R;
+
+    % STS scaling per user
+    % Calculate per RU scaling as per IEEE 802.11ax-2021, Section 27.3.10,
+    % Equation 27-5. Note we scale by sqrt(cardK)/sqrt(cardKHELTFr). This
+    % causes us to normalize the power in the RU. The HE-LTF symbols for
+    % the user are scalled by the number of space-time streams for the user
+    % of interest.
+    ruScalingFactor = scalingConstant/sqrt(cfg.User{u}.NumSpaceTimeStreams*cardKHELTFr);
+    userSTSScalingFactor(1,(1:heLTFInfo.NHELTFWithRepetition(u))+heltfSymOffset(u)) = repmat(ruScalingFactor,1,heLTFInfo.NHELTFWithRepetition(u));
+end
+
+ruGrid = complex(zeros(numel(kRU),Nltf,maxNumSpaceTimeStream));
+% Indices of data and pilot subcarriers within the occupied RU
+kPilot = wlan.internal.hePilotSubcarrierIndices(cbw,allocationInfo.RUSizes);
+ruInd = wlan.internal.heOccupiedSubcarrierIndices(kRU,kPilot);
+
+% Indices of data and pilot subcarriers within the occupied RU
+for k = 1:Nltf
+    if secureMode 
+        % Data is multiplied by P matrix so whole RU multiplied by P
+        % matrix. Then the per symbol phase rotation is applied.
+        ruGrid(:,k,:) = squeeze(HELTFRU(:,k,:)).*PRep(:,k).'.*phaseRotation(:,k).';
+    else
+        % Single stream pilots
+        ruGrid(ruInd.Data,k,:) = HELTFRU(ruInd.Data).*PRep(:,k).';
+        ruGrid(ruInd.Pilot,k,:) = HELTFRU(ruInd.Pilot).*RRep(:,k).';
+    end
+end
+
+if ~secureMode
+    % Cyclic shift is applied per space time stream
+    ruGrid = wlan.internal.heCyclicShift(ruGrid,cbw,kRU,(1:maxNumSpaceTimeStream).');
+end
+
+% Map subcarriers to full FFT grid and scale
+n_Scale = 1; % Scaling factor for an HE SU format. IEEE 802.11ax-2021, Section 27.3.11.10
+ofdmGrid(kRU+Nfft/2+1,:,1:maxNumSpaceTimeStream) = ruGrid.*userSTSScalingFactor*n_Scale;
+
+% Overall scaling factor
+allScalingFactor = Nfft/sqrt(sum(powerBoostFactor.^2.*cardKr));
+
+CPLenSamples = cfg.GuardInterval*cbw;
+
+if secureMode && cfg.FrequencyDomainWindowing % Apply the frequency domain windowing if required
+    fdw = heRangingFrequencyDomainWindow(Nfft,kNz);
+    ofdmGrid = ofdmGrid.*fdw;
+end
+
+if secureMode % OFDM modulate with zero power GI
+    NfftOsf = round(osf*Nfft/2);
+    CPLenSamplesOsf = round(osf*CPLenSamples);
+    ofdmGridOsf = complex(zeros(NfftOsf,Nltf,numTx));
+    ofdmGridOsf((1:Nfft/2)+(NfftOsf-Nfft/2)/2,:,:) = ofdmGrid(1:2:end,:,:);
+    postShift = ifftshift(ofdmGridOsf,1);
+    postIFFT = ifft(postShift,[],1);
+    postCP = [complex(zeros(CPLenSamplesOsf,Nltf,numTx)); postIFFT]; % Add zero power CP
+    y = reshape(postCP,[(NfftOsf+CPLenSamplesOsf)*Nltf numTx]).*allScalingFactor/2*osf; %/2 to account for NFFT/2 actual FFT size, osf to account for oversampling
+else
+    y = wlan.internal.wlanOFDMModulate(ofdmGrid(1:2:end,:,:),CPLenSamples,osf).*allScalingFactor/2; %/2 to account for NFFT/2 actual FFT size
+end
+
+end
+./libs/heRangingLTFInfo.m
+
+function hezInfo = heRangingLTFInfo(cfg)
+%heRangingLTFInfo HE-LTF information of Ranging NDP packet
+%   hezInfo = heRangingLTFInfo(cfg) returns a structure containing
+%   HE-LTF field information for the format configuration object cfg.
+%   The structure hezInfo has the following fields:
+%
+%   NUsers                      - Number of users.
+%
+%   NSTS                        - Number of space-time streams as
+%                                 a vector of size 1-by-NumUsers.
+%
+%   MaxNSTS                     - Maximum  number of space-time streams
+%                                 across all users.
+%
+%   NRepetitions                - Number of repetitions as a vector of size 1-by-NumUsers.
+%
+%   NHELTF                      - Number of HE-LTF symbols in HE-LTF.
+%
+%   NHELTFWithRepetition        - Number of HE-LTF symbols in HE-LTF
+%                                 including repetition of HE-LTF
+%                                 symbols for all users as a vector of size
+%                                 1-by-NumUsers.
+%
+%   NHELTFWithoutRepetition     - Number of HE-LTF symbols in HE-LTF
+%                                 excluding repetition of HE-LTF symbols as
+%                                 a vector of size 1-by-NumUsers.
+%
+%   NSecureHELTFOctets          - Number of secure octets required to encode
+%                                 the HE-LTF symbols for all users as a
+%                                 vector of size 1-by-NumUsers.
+%
+%   cfg is a format configuration object of type <a href="matlab:help('heRangingConfig')">heRangingConfig</a>.
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+validateattributes(cfg,{'heRangingConfig'},{'scalar'},mfilename,'Configuration object');
+cbw = wlan.internal.cbwStr2Num(cfg.ChannelBandwidth);
+switch cbw
+    case 20
+        numNz = 122; % Number of non-zero subcarriers as defined in Equation 27-126a of IEEE Std 802.11az-2022.
+    case 40
+        numNz = 242; % Number of non-zero subcarriers as defined in Equation 27-126b of IEEE Std 802.11az-2022.
+    case 80
+        numNz = 498; % Number of non-zero subcarriers as defined in Equation 27-126c of IEEE Std 802.11az-2022.
+    otherwise % 160 MHz
+        numNz = 996; % Number of non-zero subcarriers as defined in Figure 27-46g of IEEE Std 802.11az-2022.
+end
+numUsers = numel(cfg.User);
+numRepetitionsPerUser = coder.nullcopy(zeros(1,numUsers));
+numSTSPerUser = coder.nullcopy(zeros(1,numUsers));
+numHELTFSymPerUserWithRep = coder.nullcopy(zeros(1,numUsers));
+numHELTFSymPerUserWithoutRep = coder.nullcopy(zeros(1,numUsers));
+for u=1:numUsers
+    numSTSPerUser(u) = cfg.User{u}.NumSpaceTimeStreams;
+    numRepetitionsPerUser(u) = cfg.User{u}.NumHELTFRepetitions;
+    numHELTFSymPerUserWithoutRep(u) = wlan.internal.numVHTLTFSymbols(cfg.User{u}.NumSpaceTimeStreams);
+    numHELTFSymPerUserWithRep(u) = numHELTFSymPerUserWithoutRep(u)*cfg.User{u}.NumHELTFRepetitions;
+end
+numHELTFTotal = sum(numHELTFSymPerUserWithRep);
+numOctetsPerUser = numNz*numHELTFSymPerUserWithRep+7;  % First 7 octets are for phase rotation applied on number of space-time streams greater than 1
+hezInfo = struct(...
+    'NUsers',                     numUsers,...
+    'NSTS',                       numSTSPerUser,...
+    'MaxNSTS',                     max(numSTSPerUser),...
+    'NRepetitions',               numRepetitionsPerUser,...
+    'NHELTF',                     numHELTFTotal,...
+    'NHELTFWithRepetition',       numHELTFSymPerUserWithRep,...
+    'NHELTFWithoutRepetition',    numHELTFSymPerUserWithoutRep,...
+    'NSecureHELTFOctets',         numOctetsPerUser);
+end
+./libs/heRangingPlotDelayProfile.m
+
+function heRangingPlotDelayProfile
+%heRangingPlotDelayProfile Plots the estimated multipath delay profile
+%
+%   heRangingPlotDelayProfile simulates a single 802.11az packet
+%   transmission through a TGax multipath channel and estimates the delay
+%   profile and the time of arrival (ToA) via MUSIC super-resolution.
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+% Configure simulation parameters
+snr = 35; % SNR (dB)
+distance = 10; % Transmit - receive distance in meters
+
+s = rng(); % Store current random state
+rng(99,'combRecursive'); % Set repeatable random number stream
+
+% Configure the HE ranging NDP parameters of the STA
+chanBW = 'CBW40'; % Channel bandwidth
+numTx = 1; % Number of transmit antennas
+numRx = 1; % Number of receive antennas
+
+cfgSTA = heRangingConfig;
+cfgSTA.ChannelBandwidth = chanBW;
+cfgSTA.NumTransmitAntennas = numTx;
+cfgSTA.SecureHELTF = true;
+cfgSTA.User{1}.NumSpaceTimeStreams = 1;
+cfgSTA.User{1}.NumHELTFRepetitions = 3;
+cfgSTA.UplinkIndication = 1; % For UL
+cfgSTA.User{1}.SecureHELTFOctets = dec2hex(randsrc(1,10,(0:15)))';
+
+ofdmInfo = wlanHEOFDMInfo('HE-LTF',chanBW,cfgSTA.GuardInterval);
+sampleRate = wlanSampleRate(chanBW);
+speedOfLight = physconst('lightspeed'); % m/s
+
+% Configure multipath channel
+chan = wlanTGaxChannel;
+chan.DelayProfile = 'Model-B';
+chan.NumTransmitAntennas = numTx;
+chan.NumReceiveAntennas = numRx;
+chan.SampleRate = sampleRate;
+chan.CarrierFrequency = 5e9;
+chan.ChannelBandwidth = chanBW;
+chan.PathGainsOutputPort = true;
+chan.NormalizeChannelOutputs = false;
+
+chBaseInfo = info(chan);
+chDelay = chBaseInfo.ChannelFilterDelay;
+numPaths = size(chBaseInfo.PathDelays,2);
+
+% Generate 11az waveform
+tx = heRangingWaveformGenerator(cfgSTA);
+
+% Introduce time delay (fractional and integer) in the transmit waveform
+delay = distance/speedOfLight;
+sampleDelay = sampleRate*delay;
+txDelay = heDelaySignal(tx,sampleDelay);
+
+% Pad signal and pass through multipath channel
+[txMultipath,pathGains] = chan([txDelay;zeros(50,cfgSTA.NumTransmitAntennas)]);
+
+% Pass the waveform through AWGN channel
+% Account for noise energy in nulls so the SNR is defined per
+% active subcarrier
+rx = awgn(txMultipath,snr - 10*log10(ofdmInfo.FFTLength/ofdmInfo.NumTones));
+
+% Perform synchronization and channel estimation
+[chanEstActiveSC,integerOffset] = heRangingSynchronize(rx,cfgSTA);
+
+% Estimate fractional delay w. MUSIC super-resolution
+[fracDelay,delProfTimeEst,delProfPowEst] = heRangingTOAEstimate(chanEstActiveSC, ...
+                                                                  ofdmInfo.ActiveFFTIndices, ...
+                                                                  ofdmInfo.FFTLength,...
+                                                                  sampleRate,...
+                                                                  numPaths);
+
+% Account for channel filter delay
+integerOffset = integerOffset-chDelay;
+
+% Plot the estimated delay profile
+truePathDelays = delay+chBaseInfo.PathDelays;
+truePathPowers = abs(pathGains(1,:,1,1)).^2;
+estPathDelays = delProfTimeEst+integerOffset/sampleRate;
+estToa = fracDelay+integerOffset/sampleRate;
+
+figure;
+stem(1e9*truePathDelays,truePathPowers);
+K = truePathPowers(1)/delProfPowEst(estPathDelays==estToa);
+hold on,plot(1e9*estPathDelays,K*delProfPowEst);
+hold on,plot(1e9*estToa,K*delProfPowEst(estPathDelays==estToa),'r*');
+xlim([0 1.1e9*truePathDelays(end)])
+legend('True delay profile','MUSIC estimate','Estimated ToA')
+xlabel('Time (ns)'),ylabel('Path power')
+title('Delay profile (40 MHz, Model-B, 35 dB SNR, SISO)')
+
+% Restore random state
+rng(s);
+
+end
+
+./libs/heRangingPlotPositions.m
+
+function heRangingPlotPositions(positionAP,positionSTAEst,distanceEst,snr,iter)
+%heRangingPlotPositions Plots the HE ranging positioning results
+%   heRangingPlotPositions(POSITIONAP,POSITIONSTAEST,DISTANCEEST,SNR,ITER)
+%   plots the STA, estimated STA and APs positions in the xy-plane with
+%   trilateration circles at the given signal-to-noise ratio.
+%
+%   POSITIONAP represents the 2-dimentional position of the APs in xy-plane.
+%
+%   POSITIONSTAEST represents the estimated 2-dimentional position of the
+%   STA in xy-plane.
+%
+%   DISTANCEEST represents the estimated distance between the STA and APs
+%   in meters.
+%
+%   SNR is the signal-to-noise ratio in dB.
+%
+%   ITER denotes the iteration.
+
+%   Copyright 2020 The MathWorks, Inc.
+
+% Plot the positions of the STA and APs in the xy-plane
+
+positionSTA = [0;0];
+numAPs = size(positionAP,2);
+angles = 0:2*pi/720:2*pi;
+figure
+for i = 1:numAPs
+    x = distanceEst(i) * cos(angles) + positionAP(1,i);
+    y = distanceEst(i) * sin(angles) + positionAP(2,i);
+    h(1) = plot(x,y,'k:','LineWidth',2);
+    hold on; grid on
+    h(2) = plot(positionAP(1,i),positionAP(2,i),'b*',...
+        'MarkerSize',5,'LineWidth',1);
+end
+h(3) = plot(positionSTA(1),positionSTA(2),'rP','MarkerSize',10,'LineWidth',2);
+h(4) = plot(positionSTAEst(1),positionSTAEst(2),'kS','MarkerSize',10,'LineWidth',2);
+xlabel('X')
+ylabel('Y')
+title(['Позиция моб. уст-ва ' num2str(snr) ' дБ для итерации #' num2str(iter) ])
+legend(h([1 2,3,4]),{'Трилатерация','Позиция моб. уст-ва','Позиция ТД','Оценка позиции'},'Location','best','FontSize',10)
+legend('boxoff')
+axis equal
+end
+./libs/heRangingSynchronize.m
+
+function [chanEst,pktOffset] = heRangingSynchronize(rx,cfg)
+%heRangingSynchronize Performs Ranging synchronization
+%
+%   [CHANEST,PKTOFFSET] = heRangingSynchronize(RX,CFG) returns the
+%   estimated channel, CHANEST, between all space-time streams and receive
+%   antennas using HE-LTF of an HE ranging NDP and PKTOFFSET, an integer
+%   scalar indicating the location of the start of a detected packet. If no
+%   packet is detected an empty value is returned for both CHANEST and
+%   PKTOFFSET.
+%
+%   RX is the received time-domain signal on which ranging synchronization
+%   is performed. It is an Ns-by-Nr matrix of real or complex values, where
+%   Ns represents the number of time-domain samples and Nr represents the
+%   number of receive antennas.
+%
+%   CFG is a format configuration object of type <a
+%   href="matlab:help('heRangingConfig')">heRangingConfig</a>.
+%
+%   CHANEST is a complex Nst-by-Nsts-by-Nr array characterizing the
+%   estimated channel, where Nst is the number of occupied subcarriers,
+%   Nsts is the total number of space-time streams, and Nr is the number of
+%   receive antennas.
+%
+%   PKTOFFSET is an integer scalar indicating the location of the start
+%   of a detected packet as the offset from the start of the signal RX. If
+%   no packet is detected an empty value is returned.
+
+%   Copyright 2020-2021 The MathWorks, Inc.
+
+% Get channel bandwidth
+chanBW = cfg.ChannelBandwidth;
+
+% Get sample rate and the ranging field indices
+fs = wlanSampleRate(chanBW);
+ind = heRangingFieldIndices(cfg);
+
+% Packet detect and determine coarse packet offset
+coarsePktOffset = wlanPacketDetect(rx,chanBW);
+if ~isempty(coarsePktOffset) && ((coarsePktOffset+ind.LSIG(2))<=size(rx,1))
+    % Extract L-STF and perform coarse frequency offset correction
+    lstf = rx(coarsePktOffset+(ind.LSTF(1):ind.LSTF(2)),:);
+    coarseFreqOff = wlanCoarseCFOEstimate(lstf,chanBW);
+    rx = frequencyOffset(rx,fs,-coarseFreqOff);  
+    
+    % Extract the non-HT fields and determine fine packet offset
+    nonhtfields = rx(coarsePktOffset+(ind.LSTF(1):ind.LSIG(2)),:);
+    finePktOffset = wlanSymbolTimingEstimate(nonhtfields,chanBW);
+
+    % Determine final packet offset
+    pktOffset = coarsePktOffset+finePktOffset;
+    
+    % Check if the packet is detected out of the range. With a maximum
+    % propagation distance of 100 meters, the expected maximum propagation
+    % delay should be 54 samples for channel bandwidth of 160 MHz.
+    % maxPktOffset = (160e6*100 meters/speedOfLight)
+    if (pktOffset <= 54) && ((pktOffset+ind.HELTF(2))<=size(rx,1))
+        % Extract L-LTF and perform fine frequency offset correction
+        rxLLTF = rx(pktOffset+(ind.LLTF(1):ind.LLTF(2)),:);
+        fineFreqOff = wlanFineCFOEstimate(rxLLTF,chanBW);
+        rx = frequencyOffset(rx,fs,-fineFreqOff);
+        rxHELTF = rx(pktOffset+(ind.HELTF(1):ind.HELTF(2)),:);
+
+        % OFDM demodulate
+        heltf = heRangingDemodulate(rxHELTF,cfg);
+
+        % Channel estimate
+        chanEst = heLTFRangingChannelEstimate(heltf,cfg);
+        
+    else
+        chanEst = [];
+        pktOffset = [];
+    end
+else
+    chanEst = [];
+    pktOffset = [];    
+end
+end
+
+./libs/heRangingTOAEstimate.m
+
+function [toa,tau,pow] = heRangingTOAEstimate(chanEstActiveSC,activeFFTIndices,fftLength,sampleRate,numPaths)
+%heRangingTOAEstimate Estimates the TOA (Time of Arrival) from a CFR
+%
+%   [TOA,TAU,POW] = heRangingTOAEstimate(CHANESTACTIVESC,
+%   ACTIVEFFTINDICES,FFTLENGTH,SAMPLERATE,NUMPATHS) estimates the TOA
+%   from CFR by estimating the CFR's correlation matrix, performing MUSIC
+%   super-resolution to estimate its delay profile and detecting the ToA
+%   from it.
+%
+%   TOA is the estimated time-of-arrival in seconds for the packet
+%
+%   TAU is the estimated time vector for the estimated delay profile
+%
+%   POW is the estimated delay profile path power vector
+%
+%   CHANESTACTIVESC is N-by-P array of CFRs with possibly missing
+%   subcarriers. N is the active subcarrier CFR FFT length and P is the
+%   number of CFR snapshots
+%
+%   ACTIVEFFTINDICES is a N-by-1 vector of the active FFT indices
+%   corresponding to CHANESTACTIVESC
+%
+%   FFTLENGTH is the full length of the CFR (without any missing
+%   subcarriers)
+%
+%   SAMPLERATE is the sample rate in Hz for the input, CFR
+%
+%   NUMPATHS is either the estimated or true number of paths in the channel
+
+%   Copyright 2020-2021 The MathWorks, Inc.
+
+narginchk(5,5);
+if size(chanEstActiveSC,1)~=numel(activeFFTIndices)
+    error('The size of the first dimension of chanEstActiveSC must be equal to activeFFTIndices.');
+end
+
+if ~any(fftLength==[256 512 1024 2048])
+    error('fftLength must be 256, 512, 1024, or 2048');
+end
+
+if ~any(sampleRate==[20 40 80 160]*1e6)
+    error('sampleRate must be 20e6, 40e6, 80e6, or 160e6 Hz.');
+end
+
+validateattributes(numPaths,{'numeric'},{'scalar','integer','>',0},mfilename,'''numPaths'' value');
+
+subcarrierSpacing = sampleRate/fftLength;
+if subcarrierSpacing~=78125
+    error('Incorrect combination of fftLength and sampleRate. fftLength must be 256, 512, 1024, or 2048 for sample rate 20e6, 40e6, 80e6, or 160e6.');
+end
+
+% Reshape to consider each STS and Rx CFR as an independent
+% snapshot
+[numActiveSC,numSTS,numRx] = size(chanEstActiveSC);
+chanEstActiveSC = reshape(chanEstActiveSC,[numActiveSC,numSTS*numRx]);
+
+% Interpolate across missing subcarriers (MUSIC assumes uniform spacing)
+allFFTIndices = (1:fftLength).';
+magPart = interp1(activeFFTIndices,abs(chanEstActiveSC),allFFTIndices);
+phasePart = interp1(activeFFTIndices,unwrap(angle(chanEstActiveSC)),allFFTIndices);
+[realPart,imagPart] = pol2cart(phasePart,magPart);
+chanEstWithNan = complex(realPart,imagPart);
+chanEst = chanEstWithNan(~isnan(chanEstWithNan(:,1)),:);
+
+% Generate correlation matrix
+Rxx = heRangingCorrelationMatrixEstimate(chanEst);
+
+% Estimate multipath delay profile with MUSIC
+spatialResolution  = 0.1; % Estimated delay profile spatial resolution (10cm)
+reqNumSamples = physconst('LightSpeed')/(spatialResolution*subcarrierSpacing);
+reqNumSamples = 2^(round(log2(reqNumSamples))); % Round to closest power of 2 to speed up pmusic
+[pow,w] = pmusic(conj(Rxx),numPaths,reqNumSamples,'corr','centered');
+tau = w/(2*pi*subcarrierSpacing);% Scale pseudospectrum to time-domain
+
+if ~any(pow==Inf)    
+    % Dynamic range for thresholding depending on BW
+    % (dynamicRangeArray is determined statistically for different bandwidths,
+    % by running longer simulations and estimating the values which return the
+    % least ranging error for each bandwidth)
+    dynamicRangeArray = [5 6 11 14];
+    dynamicRange = dynamicRangeArray(log2(fftLength/256) + 1);
+    % Find threshold based on the dynamic range
+    threshold = max(pow)/(10.^(dynamicRange/10));
+
+    % Find all path peaks in the delay profile
+    [~,idx] = findpeaks(pow,'MinPeakHeight',threshold);
+else % pmusic returns Inf in ideal conditions
+    idx = find(pow==Inf,1);
+end
+toa = min(tau(idx)); % First peak is ToA of the DLOS path
+
+end
+./libs/heRangingUser.m
+
+classdef heRangingUser < comm.internal.ConfigBase
+%heRangingUser User properties of HE-LTF field
+%   CFGUser = heRangingUser creates a user configuration object. This
+%   object contains the HE-LTF properties of a user within an HE Ranging
+%   NDP PPDU.
+%
+%   CFGUSER = heRangingUser(Name,Value) creates an object that holds
+%   the HE-LTF properties for the users within an HE Ranging NDP PPDU,
+%   CFGUSER, with the specified property Name set to the specified value.
+%   You can specify additional name-value pair arguments in any order as
+%   (Name1,Value1, ...,NameN,ValueN).
+%
+%   heRangingUser objects are used to parameterize users within an HE
+%   Ranging NDP PPDU transmission, and therefore are part of the
+%   <a href="matlab:help('heRangingConfig')">heRangingConfig</a> object.
+%
+%   heRangingUser properties:
+%
+%   NumSpaceTimeStreams - Number of space-time streams
+%   NumHELTFRepetitions - Number of repetitions of HE-LTF symbols
+%   SecureHELTFOctets   - Secure HE-LTF octets
+%
+%   See also heRangingConfig.
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+properties
+    %NumSpaceTimeStreams Number of space-time streams
+    %   Specify the number of space-time streams as integer between 1 and
+    %   8, inclusive. The default value of this property is 1.
+    NumSpaceTimeStreams (1,1) {mustBeNumeric,mustBeInteger,mustBeGreaterThanOrEqual(NumSpaceTimeStreams,1),mustBeLessThanOrEqual(NumSpaceTimeStreams,8)} = 1;
+    %NumHELTFRepetitions Number of repetitions of HE-LTF symbols
+    %   Specify the number of HE-LTF repetition as integer between 1 and 8,
+    %   inclusive. The default value of this property is 2, which is the
+    %   minimum number of repetitions of HE-LTF symbols in HE-LTF secure
+    %   mode.
+    NumHELTFRepetitions (1,1) {mustBeNumeric,mustBeInteger,mustBeGreaterThanOrEqual(NumHELTFRepetitions,1),mustBeLessThanOrEqual(NumHELTFRepetitions,8)} = 2;
+    %SecureHELTFOctets Secure HE-LTF octets
+    %   Specify the secure HE-LTF octets as a character vector or string
+    %   scalar representing octets in hexadecimal format or a uint8 vector
+    %   or a numeric vector whose elements are within the range [0,255].
+    %   If the number of input octets is less than the required number of
+    %   octets for the given user configuration, the secure octets are
+    %   cyclically extended. If the number of input octets is more than the
+    %   required number of octets for the given user configuration, only the
+    %   required number of octets are extracted from the input.
+    %   The default sequence is '00000000'.
+    SecureHELTFOctets = '00000000';
+end
+
+methods
+    function obj = heRangingUser(varargin)
+        % For codegen set different dimensions to make sure varsize
+        if ~isempty(coder.target)
+            secureHELTFOctets = '00000000';
+            coder.varsize('SecureHELTFOctets',[1 63751*2],[0 1]); % Add variable-size support,
+            % 63751=64*996+7, where 64 is max number of HE-LTF symbols,
+            % 996 is number of non-zero subcarriers in 160 MHz bandwidth
+            % and 7 is the number of octets required to add phase rotation
+            % for space-times streams 2 to 7. The number is multiplied by 2
+            % since each octet requires 2 hex digits.
+            obj.SecureHELTFOctets = secureHELTFOctets; % Default
+        end
+        obj = setProperties(obj,varargin{:}); % Supperclass method for NV pair parsing
+    end
+
+    function obj = set.SecureHELTFOctets(obj,val)
+        propName = 'SecureHELTFOctets';
+        % validate format
+        validateattributes(val, {'numeric','char', 'string'}, {}, mfilename, propName);
+        if isa(val,'numeric')
+            validateattributes(val,{'numeric'},{'finite','nonempty','>=',0,'<=',255,'integer','vector'})
+            obj.(propName) = val;
+        else % char or string
+            if isa(val, 'char')
+                validateattributes(val,{'char'},{'vector'},mfilename,propName);
+            else % string
+                validateattributes(val,{'string'},{'scalar'},mfilename,propName);
+            end
+            % Validate hex-digits
+            wlan.internal.validateHexOctets(upper(char(val)),propName);
+            obj.(propName) = val;
+        end
+    end
+end
+end
+
+./libs/heRangingWaveformGenerator.m
+
+function txWaveform = heRangingWaveformGenerator(cfgFormat,varargin)
+%heRangingWaveformGenerator WLAN waveform generation
+%   TXWAVEFORM = heRangingWaveformGenerator(CFGFORMAT) generates an HE
+%   Ranging NDP waveform as in IEEE 802.11az-2022. The generated waveform
+%   contains a single packet with no idle time. The function windows the
+%   packet for spectral controls with a windowing transition time of 1e-7
+%   seconds.
+%
+%   TXWAVEFORM is a complex Ns-by-Nt matrix containing the generated
+%   waveform, where Ns is the number of time domain samples, and Nt is the
+%   number of transmit antennas.
+%
+%   CFGFORMAT contains transmission parameters for the generated waveform
+%   in an <a href="matlab:help('heRangingConfig')">heRangingConfig</a> object.
+%
+%   TXWAVEFORM = heRangingWaveformGenerator(CFGFORMAT,Name,Value) specifies
+%   additional name-value pair arguments. When you do not specify a
+%   name-value pair argument the function uses its default value.
+%
+%   'NumPackets'               Number of packets to generate, specified as
+%                              a positive integer. The default value is 1.
+%
+%   'IdleTime'                 Length of an idle period, in seconds, after
+%                              each generated packet, specified as either 0
+%                              or a scalar greater than or equal to 2e-6.
+%                              The default value is 0.
+%
+%   'OversamplingFactor'       The oversampling factor used by the
+%                              function to generate the IEEE 802.11az
+%                              waveform. The oversampling factor must be
+%                              >=1. The resultant FFT length must be even,
+%                              and the cyclic prefix length in samples must
+%                              be integer-valued for all symbols within a
+%                              packet. The default value is 1.
+%
+%   'WindowTransitionTime'     The windowing transition length in seconds,
+%                              applied to the waveform. Windowing is only
+%                              applied when the type of HE-LTF sequence is
+%                              non-secure. The maximum window transition
+%                              time is 1.6e-6 seconds. The default value is
+%                              1e-7 seconds.
+%
+%   Examples:
+%
+%   Example 1:
+%       %  Generate a time-domain signal for an HE Ranging NDP
+%       %  transmission with 10 packets and a 20 microsecond idle period
+%       %  between packets. Each packet has two repetitions of
+%       %  space-time streams.
+%
+%       numPkts = 10;                % 10 packets in the waveform
+%       cfg = heRangingConfig();     % Create format configuration
+%       cfg.NumTransmitAntennas = 2; % Number of transmit antennas
+%
+%       % Set space-time streams and number of HE-LTF repetitions
+%       cfg.User{1}.NumSpaceTimeStreams = 2;
+%       cfg.User{1}.NumHELTFRepetitions = 2;
+%
+%       txWaveform = heRangingWaveformGenerator(cfg, ...
+%           'NumPackets', numPkts, 'IdleTime', 20e-6, ...
+%           'WindowTransitionTime', 1e-7);
+%
+%   Example 2:
+%       %  Generate a time domain signal for a secure HE Ranging NDP
+%       %  transmission with 10 packets and 20 microsecond idle period
+%       %  between packets. Each packet has two repetitions of
+%       %  space-time streams.
+%
+%       numPkts = 10;                    % 10 packets in the waveform
+%       cfg = heRangingConfig();         % Create format configuration
+%       cfg.NumTransmitAntennas = 2;     % Number of transmit antennas
+%       cfg.SecureHELTF = true;          % Use secure HE-LTF sequence
+%
+%       % Set space-time streams and number of HE-LTF repetitions
+%       cfg.User{1}.NumSpaceTimeStreams = 2;
+%       cfg.User{1}.NumHELTFRepetitions = 2;
+%       numOctets = numSecureHELTFOctets(cfg);
+%       % The secure HE-LTF octets are represented as a int vector
+%       cfg.User{1}.SecureHELTFOctets = randi([0 255], 1, numOctets(1));
+%
+%       txWaveform = heRangingWaveformGenerator(cfg, ...
+%           'NumPackets', numPkts, 'IdleTime', 20e-6);
+%
+%   Example 3:
+%       %  Generate a time-domain signal for a secure HE Ranging NDP
+%       %  transmission for two users.
+%
+%       cfg = heRangingConfig(2);        % Create format configuration
+%
+%       txWaveform = heRangingWaveformGenerator(cfg);
+%
+%   Example 4:
+%       %  Generate a time-domain signal for a secure HE Ranging NDP
+%       %  transmission for two users. The number of space-time streams are
+%       %  two and one for user 1 and 2, respectively. Generate the HE-LTF
+%       %  symbols for both users by specifying a secure HE-LTF sequence.
+%
+%       cfg = heRangingConfig(2);    % Create format configuration
+%       cfg.NumTransmitAntennas = 2; % Number of transmit antennas
+%
+%       % Set space-time streams and number of HE-LTF repetitions
+%       cfg.User{1}.NumSpaceTimeStreams = 2;
+%       cfg.User{1}.NumHELTFRepetitions = 2;
+%
+%       cfg.User{2}.NumSpaceTimeStreams = 1;
+%       cfg.User{2}.NumHELTFRepetitions = 2;
+%
+%       % Get the length of the secure octets
+%       numOctets = numSecureHELTFOctets(cfg);
+%
+%       % Set secure HE-LTF octets for user-1, which is represented as a int vector
+%       cfg.User{1}.SecureHELTFOctets = randi([0 255], 1, numOctets(1));
+%
+%       % Set secure HE-LTF octets for user-2, which is represented as hex decimals
+%       cfg.User{2}.SecureHELTFOctets = dec2hex(randi([0 15], 1, 2*numOctets(2)));
+%
+%       txWaveform = heRangingWaveformGenerator(cfg);
+%
+%   See also heRangingFieldIndices
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+% Check number of input arguments
+coder.internal.errorIf(mod(nargin,2)==0,'wlan:wlanWaveformGenerator:InvalidNumInputs');
+
+% Validate the format configuration object is a valid type
+validateattributes(cfgFormat,{'heRangingConfig'},{'scalar'},mfilename,'format configuration object');
+validateConfig(cfgFormat);
+
+% Define default values for WindowTransitionTime
+winTransitTime = 1e-7;
+if cfgFormat.SecureHELTF
+     winTransitTime = 0; % No windowing by default for secure HE-LTF
+end
+
+% Default values
+defaultParams = struct('NumPackets', 1, ...
+                    'IdleTime', 0, ...
+                    'WindowTransitionTime', winTransitTime, ...
+                    'OversamplingFactor', 1);
+
+if nargin==1
+    useParams = defaultParams;
+else
+    % Extract each P-V pair
+    if isempty(coder.target) % Simulation path
+        p = inputParser;
+        addParameter(p,'NumPackets',defaultParams.NumPackets);
+        addParameter(p,'IdleTime',defaultParams.IdleTime);
+        addParameter(p,'WindowTransitionTime',defaultParams.WindowTransitionTime);
+        addParameter(p,'OversamplingFactor',defaultParams.OversamplingFactor);
+        parse(p,varargin{:});
+        useParams = p.Results;
+    else % Codegen path
+        pvPairs = struct('NumPackets', uint32(0), ...
+                         'IdleTime', uint32(0), ...
+                         'WindowTransitionTime', uint32(0), ...
+                         'OversamplingFactor', uint32(1));
+
+        % Select parsing options
+        popts = struct('PartialMatching',true);
+
+        % Parse inputs
+        pStruct = coder.internal.parseParameterInputs(pvPairs,popts,varargin{:});
+
+        % Get values for the P-V pair or set defaults for the optional arguments
+        useParams = struct;
+        useParams.NumPackets = coder.internal.getParameterValue(pStruct.NumPackets,defaultParams.NumPackets,varargin{:});
+        useParams.IdleTime = coder.internal.getParameterValue(pStruct.IdleTime,defaultParams.IdleTime,varargin{:});
+        useParams.WindowTransitionTime = coder.internal.getParameterValue(pStruct.WindowTransitionTime,defaultParams.WindowTransitionTime,varargin{:});
+        useParams.OversamplingFactor = coder.internal.getParameterValue(pStruct.OversamplingFactor,defaultParams.OversamplingFactor,varargin{:});
+    end
+
+    if cfgFormat.SecureHELTF && useParams.WindowTransitionTime > 0 % Do not window HE ranging NDP with secure HE-LTF sequence
+        error('Windowing is not supported for HE-LTF symbols with secure HE-LTF sequence');
+    end
+
+    % Validate each P-V pair
+    % Validate numPackets
+    validateattributes(useParams.NumPackets,{'numeric'},{'scalar','integer','>=',0},mfilename,'''NumPackets'' value');
+    % Validate idleTime
+    validateattributes(useParams.IdleTime,{'numeric'},{'scalar','real','>=',0},mfilename,'''IdleTime'' value');
+    minIdleTime = 2e-6;
+    coder.internal.errorIf((useParams.IdleTime > 0) && (useParams.IdleTime < minIdleTime),'wlan:wlanWaveformGenerator:InvalidIdleTimeValue',sprintf('%1.0d',minIdleTime));
+    % Validate WindowTransitionTime
+    maxWinTransitTime = 1.6e-6; % Seconds
+    validateattributes(useParams.WindowTransitionTime,{'numeric'},{'real','scalar','>=',0,'<=',maxWinTransitTime},mfilename,'''WindowTransitionTime'' value');
+    % Validate OversamplingFactor
+    validateattributes(useParams.OversamplingFactor,{'numeric'},{'real','finite','scalar','>=',1},mfilename,'OversamplingFactor');
+end
+
+osf = double(useParams.OversamplingFactor); % Force from numeric to double
+
+% Get the sampling rate of the waveform
+[psps,trc] = hePacketSamplesPerSymbol(cfgFormat,osf);
+numPktSamples = psps.NumPacketSamples;
+numTxAnt = cfgFormat.NumTransmitAntennas;
+cbw = wlan.internal.cbwStr2Num(cfgFormat.ChannelBandwidth);
+sr = cbw*1e6*osf;
+sf = cbw*1e-3*osf; % Scaling factor to convert bandwidth and time in ns to samples
+cpLen = trc.TGIData*sf;
+heltfSymLen = trc.THELTFSYM*sf;
+Npe = wlan.internal.heNumPacketExtensionSamples(trc.TPE,cbw)*osf;
+
+LSTF = wlan.internal.heLSTF(cfgFormat,osf);
+LLTF = wlan.internal.heLLTF(cfgFormat,osf);
+LSIG = wlan.internal.heLSIG(cfgFormat,osf);
+RLSIG = LSIG; % RL-SIG is identical to L-SIG
+SIGA = wlan.internal.heSIGA(cfgFormat,osf);
+% The number of transmit antenna for HE-STF should match the number of
+% transmit antenna in the first HE-LTF user block. IEEE 802.11az-2022
+% Section 27.3.18a.1. The wlan.internal.heSTF takes the max of the number
+% of space-time streams between all users. A dummy, single user
+% heRangingConfig object with same user properties as cfgFormat in used to
+% generate HE-STF samples.
+cfgHESTF = cfgFormat;
+cfgHESTF.User = {cfgFormat.User{1}};
+STF = wlan.internal.heSTF(cfgHESTF,osf);
+LTF = heRangingLTF(cfgFormat,osf);
+preamble = [LSTF; LLTF; LSIG; RLSIG; SIGA; STF; LTF];
+
+% Define a matrix of total simulation length
+numIdleSamples = round(sr*useParams.IdleTime);
+pktWithIdleLength = numPktSamples+numIdleSamples;
+txWaveform = complex(zeros(useParams.NumPackets*pktWithIdleLength,numTxAnt));
+
+% Set the PE field
+lastDataSymBlk = preamble(end-heltfSymLen+cpLen+1:end,:);
+packetExt = getPacketExtensionData(lastDataSymBlk,Npe);
+if cfgFormat.SecureHELTF
+    peField = [zeros(cpLen,size(packetExt,2)); packetExt(cpLen+1:end,:)]; % Zero power GI
+else
+    peField = packetExt;
+end
+    
+for i = 1:useParams.NumPackets
+    % Construct packet from preamble and data
+    packet = [preamble; peField];
+    txWaveform((i-1)*pktWithIdleLength+(1:numPktSamples),:) = packet;
+end
+
+if useParams.NumPackets>0 && useParams.WindowTransitionTime>0
+    % Window waveform (no need to validate TT against GI dynamically)
+    wLength = 2*ceil(useParams.WindowTransitionTime*sr/2);
+    txWaveform = wlan.internal.windowWaveform(txWaveform,psps.NumSamplesPerSymbol,psps.CPPerSymbol,psps.ExtensionPerSymbol,wLength,useParams.NumPackets,numIdleSamples);
+end
+end
+
+function packetExt = getPacketExtensionData(lastDataSymBlk,Npe)
+    % Cyclic extension of last symbol for packet extension
+    if size(lastDataSymBlk,1)>=Npe
+        packetExt = lastDataSymBlk(1:Npe,:);
+    else
+        buffCntt = ceil(Npe/size(lastDataSymBlk,1));
+        dataBuffer = repmat(lastDataSymBlk,buffCntt,1);
+        packetExt = dataBuffer(1:Npe,:);
+    end
+end
+
+function [Y,trc] = hePacketSamplesPerSymbol(cfg,varargin)
+%hePacketSamplesPerSymbol Samples per symbol information
+
+osf = 1;
+if nargin>1
+    osf = varargin{1};
+end
+
+cbw = wlan.internal.cbwStr2Num(cfg.ChannelBandwidth);
+sf = cbw*1e-3*osf; % Scaling factor to convert bandwidth and time in ns to samples
+commonCodingParams = wlan.internal.heCodingParameters(cfg);
+numDataSym = commonCodingParams.NSYM;
+npp = wlan.internal.heNominalPacketPadding(cfg);
+trc = wlan.internal.heTimingRelatedConstants(cfg.GuardInterval,cfg.HELTFType,commonCodingParams.PreFECPaddingFactor,npp,commonCodingParams.NSYM);
+
+% For each format calculate the number of samples per symbol and CP in the
+% preamble fields which are format dependent
+numHELTFSym = numHELTFSymbols(cfg);
+numSIGASym = 2;
+samplesPerSymbolPreamble = [trc.THESIGA/numSIGASym*ones(1,numSIGASym) trc.THESTFNT];
+cpLengthPreamble = [trc.TGILegacyPreamble*ones(1,2) 0];
+
+% Midamble periodicity. IEEE 802.11ax-2021, Section 27.3.12.16
+Mma = cfg.MidamblePeriodicity;
+Nma = wlan.internal.numMidamblePeriods(cfg,numDataSym); % Midamble period
+if Nma>0
+    nonCPData = trc.TSYM*ones(1,numDataSym);
+    nonCPHELTF = trc.THELTFSYM*ones(1,numHELTFSym);
+    % Reshape data symbols till last midamble in to data symbol blocks
+    data = reshape(nonCPData(1:Mma*Nma),Mma,Nma);
+    % Repeat HELTF symbols for each data symbol block
+    heLTF = repmat(nonCPHELTF,Nma,1).';
+    % Append midamble after each data symbol block
+    dataWithHELTF = [data; heLTF];
+    % Reshape and append leftover data samples after the last midamble
+    samplesPerSymbolData = [dataWithHELTF(:).' nonCPData(Mma*Nma+1:end)];
+
+    % Cyclic prefix field
+    cpLengthData = trc.TGIData*ones(1,numDataSym+numHELTFSym*Nma);
+else
+    samplesPerSymbolData = trc.TSYM*ones(1,numDataSym);
+    cpLengthData = trc.TGIData*ones(1,numDataSym);
+end
+
+if numDataSym>0
+    % Create a vector of the samples per symbol
+    samplesPerSymbol = [trc.TLSTF trc.TLLTF trc.TLSIG trc.TRLSIG ...
+        samplesPerSymbolPreamble ...
+        trc.THELTFSYM*ones(1,numHELTFSym) ...
+        samplesPerSymbolData(1:end-1) samplesPerSymbolData(end)+trc.TPE]*sf;
+else
+    % Create a vector of the samples per symbol
+    samplesPerSymbol = [trc.TLSTF trc.TLLTF trc.TLSIG trc.TRLSIG ...
+        samplesPerSymbolPreamble ...
+        trc.THELTFSYM*ones(1,numHELTFSym-1) (trc.THELTFSYM+trc.TPE)]*sf;
+end
+
+% Create a vector of the CP per symbol
+cpPerSymbol = [0 trc.TGILLTF trc.TGILegacyPreamble trc.TGILegacyPreamble ...
+    cpLengthPreamble ...
+    trc.TGIHELTF*ones(1,numHELTFSym) ...
+    cpLengthData]*sf;
+
+numPPDUSamples = sum(samplesPerSymbol);
+Y = struct('NumSamplesPerSymbol', samplesPerSymbol, ...
+           'CPPerSymbol', cpPerSymbol, ...
+           'ExtensionPerSymbol', [zeros(1,length(samplesPerSymbol)-1) trc.TPE*sf], ...
+           'NumPacketSamples', numPPDUSamples);
+
+end
+
+./libs/heSecureLTFSequence.m
+
+function [HELTF,kHELTFSeq,kNz,phaseRotation] = heSecureLTFSequence(cfg,varargin)
+%heSecureLTFSequence Secure HE-LTF symbol parameters
+%   [HELTF,kHELTFSeq,kNz,phaseRotation] = heSecureLTFSequence(cfg,varargin) 
+%   returns these secure HE-LTF symbol parameters.
+% 
+%   - HELTF: A matrix of size N-by-NHELTF containing the secure HE-LTF
+%     sequence mapped to the corresponding subcarrier indices. N is the
+%     number of subcarriers for the corresponding bandwidth and NHELTF is
+%     the number of HE-LTF symbols.
+%
+%   - kHELTFSeq: A column vector of corresponding subcarrier indices
+%
+%   - kNz: A column vector of non-zero subcarrier indices
+%
+%   - phaseRotation: A complex matrix of size NSTS-by-NHELTF containing the
+%     phase shift for each space-time stream and each HE-LTF. NSTS is the
+%     number of space time streams and NHELTF is the number of HE-LTF
+%     symbols.
+%
+%   cfg is a format configuration object of type <a href="matlab:help('heRangingConfig')">heRangingConfig</a>.
+%
+%   [...] = heSecureLTFSequence(...,UserNumber) returns the 
+%   HELTF,kHELTFSeq,kNz,phaseRotation for a given user whose index is UserNumber.
+
+%   Copyright 2020-2023 The MathWorks, Inc.
+
+%#codegen
+
+narginchk(1,2);
+validateattributes(cfg,{'heRangingConfig'},{'scalar'},mfilename,'Configuration object');
+
+% Find the non-zero entries from the regular 2x HE-LTF as IEEE 802.11az-2022,
+% Section 27.3.18b.2.
+% Get the non-secure HE-LTF and find the non-zero entries.
+cbw = wlan.internal.cbwStr2Num(cfg.ChannelBandwidth);
+[nonSecureHELTF,kHELTFSeq] = wlan.internal.heLTFSequence(cbw,cfg.HELTFType);
+idxNz = find(nonSecureHELTF);
+kNz = kHELTFSeq(idxNz);
+numNz = size(kNz,1);
+heLTFInfo = heRangingLTFInfo(cfg);
+
+% Get number of users
+numUsers = heLTFInfo.NUsers;
+
+if nargin>1
+    startUserIdx = varargin{1};
+    if ~isnumeric(startUserIdx)
+        error('Second input argument must be numeric scalar.');
+    end
+
+    if startUserIdx>numUsers
+        error('The UserNumber must not be greater than the total number of users in HE-LTF field.');
+    end
+    endUserIdx = startUserIdx; % Return the secure sequence for only one user, which is the specified using the input.
+else
+    startUserIdx = 1;
+    endUserIdx = numUsers;
+end
+
+numOutputHELTF = sum(heLTFInfo.NHELTFWithRepetition(startUserIdx:endUserIdx));
+HELTF = complex(zeros(length(kHELTFSeq),numOutputHELTF));
+phaseRotation = coder.nullcopy(complex(zeros(cfg.NumSpaceTimeStreams,numOutputHELTF)));
+
+% Index of current symbol in the whole sequence.
+symIdx = 0;
+for u=startUserIdx:endUserIdx % Process HE-LTF user blocks
+    numReps = heLTFInfo.NRepetitions(u);
+    numSTS = heLTFInfo.NSTS(u);
+    numSymsPerRep = heLTFInfo.NHELTFWithoutRepetition(u);
+
+    % 7 (for phase rotation) + (number of valid subcarriers * number of
+    % symbols)* number of repetition
+    numRequriredOctets = 7+(numNz*numSymsPerRep)*numReps;
+    if isa(cfg.User{u}.SecureHELTFOctets,'numeric')
+        octets = uint8(cfg.User{u}.SecureHELTFOctets);
+    else
+        % Convert string to a uint8 vector
+        hexArray = reshape(cfg.User{u}.SecureHELTFOctets,2,[])';
+        octets = uint8(hex2dec(hexArray));
+    end
+
+    % Crop or repeat the octets as necessary.
+    userOctets = octets(mod((0:numRequriredOctets-1)',length(octets))+1);
+    userOctets = reshape(userOctets,1,[]);
+
+    for r=1:numReps % HE-LTF Repetition block
+        % Calculate the phase rotation.
+        % Starting from stream 2 since the first rotation is always 0 (1+0i
+        % in complex format) as 802.11az-2022 Section 27.3.18b.3
+        blockPhaseRotation = complex(ones(heLTFInfo.MaxNSTS,1));
+        if numSTS>1
+            s=2:numSTS;
+            blockPhaseRotation(s)=exp(1i*(pseudorandomPhaseRotation(userOctets(s-1)) ... % pseudorandomPhaseRotation is same for all repetitions within a user block, Equation 27-126d
+                +deterministicPhaseRotation(r,s)));
+        end
+
+        for n=1:numSymsPerRep
+            % Create the LTF symbols, using octets starting from octet 8
+            % since the first 7 octets are used for phase rotation.
+            symOctet = userOctets(7+(r-1)*numNz*numSymsPerRep+(n-1)*numNz+(1:numNz));
+            bitstream = int2bit(symOctet,6,false);
+            bitstream = int8(bitstream(:));
+
+            % The bit sequence of wlanConstellationMap is B0 B1 B2 B3 B4 B5.
+            % The secound parameter is set to 6 for 64-QAM.
+            syms = wlanConstellationMap(bitstream,6);
+
+            if cbw == 160
+                % A segment parser is required to process it as upper and lower
+                % segments when using 160MHz.
+                % Table 27-47d shows the mapping and it is implmented here.
+                symsCopy = syms;
+                syms(1:length(syms)/2) = symsCopy(1:2:end); % The lower 80 MHz segment uses the symbols with odd number indicies.
+                syms(length(syms)/2+1:end) = symsCopy(2:2:end); % The upper 80 MHz segment uses the symbols with even number indicies.
+            end
+
+            % Increas the index by one then set the symbol and phase
+            % rotation.
+            symIdx = symIdx+1;
+            HELTF(idxNz,symIdx) = syms;
+            phaseRotation(:,symIdx) = blockPhaseRotation;
+        end
+    end
+end
+
+function phase = deterministicPhaseRotation(r,s)
+%phase Return the deterministic phase roation
+    persistent betaTbl % keep the table in memory between function calls
+    if isempty(betaTbl)
+        betaTbl = pi/4*...
+        [0, 0, 0, 0, 0, 0, 0, 0;
+         0, 2, 3, 5, 4, 6, 7, 1;
+         0, 3, 5, 1, 4, 7, 2, 6;
+         0, 7, 6, 4, 1, 5, 3, 2;
+         0, 1, 4, 6, 7, 5, 3, 2;
+         0, 6, 1, 2, 7, 4, 5, 3;
+         0, 4, 7, 3, 2, 1, 5, 6;
+         0, 5, 2, 7, 1, 4, 6, 3;]; % Table 27-47f
+    end
+    phase = betaTbl(r,s);
+end
+
+function phase = pseudorandomPhaseRotation(octet)
+%phase Return the pseudorandom phase roation
+    bits = int2bit(octet,8,false);
+    k = double((4*bits(6,:))+(2*bits(7,:))+bits(8,:)); % Equation 27-126e
+    phase = k*pi/4; % Equation 27-126f
+end
+
+end
+./prompt_creator.sh
+
+#!/bin/bash
+
+# Указываем имя выходного файла
+OUTPUT_FILE="output.txt"
+
+# Очищаем или создаем выходной файл
+> "$OUTPUT_FILE"
+
+# Функция для обработки файлов и папок
+process_directory() {
+    local dir="$1"
+    
+    # Проходим по всем файлам и папкам в текущей директории
+    for item in "$dir"/*; do
+        # Пропускаем output.txt
+        if [[ "$(basename "$item")" == "$OUTPUT_FILE" ]]; then
+            continue
+        fi
+        
+        if [[ -f "$item" ]]; then
+            # Если это файл, записываем его путь и содержимое
+            echo "$item" >> "$OUTPUT_FILE"
+            echo "" >> "$OUTPUT_FILE"
+            cat "$item" >> "$OUTPUT_FILE"
+            echo "" >> "$OUTPUT_FILE"
+        elif [[ -d "$item" ]]; then
+            # Если это папка, рекурсивно вызываем функцию
+            process_directory "$item"
+        fi
+    done
+}
+
+# Начинаем обработку с текущей директории
+process_directory "."
+
+echo "Processing complete. Results written to $OUTPUT_FILE"
+
+./runPositioningSimulation.m
+
+function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic, useAoA)
+    % Настройка путей поиска
+    setupSearchPaths();
+    
+    % Конфигурация сигналов и канала
+    [cfgSTABase, cfgAPBase, ofdmInfo, sampleRate, chanBase, chDelay, numPaths, speedOfLight] = ...
+        configureWaveformAndChannel(numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency);
+    
+    % Генерация позиций STA и AP
+    [positionSTA, positionAP, distance] = generateAllPositions(numAPs, numIterations, numel(snrRange));
+    
+    % Определение строки метода
+    methodStr = getMethodString(useMusic);
+    
+    % Симуляция ranging
+    [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRange, cfgSTABase, cfgAPBase, ...
+        chanBase, ofdmInfo, sampleRate, chDelay, numPaths, numRx,carrierFrequency, speedOfLight, distance, delayULDL, useMusic, useAoA, methodStr);
+    
+    % Трилатерация и вычисление ошибок
+    [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, methodStr,useAoA);
+    
+    % Визуализация результатов
+    if useAoA
+       visualizeAoAPositioning(numAPs, numIterations, snrRange, positionAP, positionSTA, positionSTAEst, aoaEst, methodStr); 
+    else
+       visualizeTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTAEst, distEst, methodStr);
+
+    end
+    % Очистка путей поиска
+    cleanupSearchPaths();
+end
+
+function setupSearchPaths()
+    addpath('libs');
+    currentFolder = fileparts(mfilename('fullpath'));
+    addpath(currentFolder);
+    addpath(fullfile(currentFolder, 'src')); % Добавляем папку с декомпозированными файлами
+end
+
+function cleanupSearchPaths()
+    rmpath('libs');
+    currentFolder = fileparts(mfilename('fullpath'));
+    rmpath(currentFolder);
+    rmpath(fullfile(currentFolder, 'src')); % Удаляем папку
+end
+./src/configureWaveformAndChannel.m
+
+function [cfgSTABase, cfgAPBase, ofdmInfo, sampleRate, chanBase, chDelay, numPaths, speedOfLight] = ...
+    configureWaveformAndChannel(numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency)
+    % Конфигурация STA
+    cfgSTABase = heRangingConfig;
+    cfgSTABase.ChannelBandwidth = chanBW;
+    cfgSTABase.NumTransmitAntennas = numTx;
+    cfgSTABase.SecureHELTF = true;
+    cfgSTABase.User{1}.NumSpaceTimeStreams = numSTS;
+    cfgSTABase.User{1}.NumHELTFRepetitions = numLTFRepetitions;
+
+    % Конфигурация AP
+    cfgAPBase = cell(1, numAPs);
+    for iAP = 1:numAPs
+        cfgAPBase{iAP} = heRangingConfig;
+        cfgAPBase{iAP}.ChannelBandwidth = chanBW;
+        cfgAPBase{iAP}.NumTransmitAntennas = numTx;
+        cfgAPBase{iAP}.SecureHELTF = true;
+        cfgAPBase{iAP}.User{1}.NumSpaceTimeStreams = numSTS;
+        cfgAPBase{iAP}.User{1}.NumHELTFRepetitions = numLTFRepetitions;
+    end
+
+    % Параметры OFDM
+    ofdmInfo = wlanHEOFDMInfo('HE-LTF', chanBW, cfgSTABase.GuardInterval);
+    sampleRate = wlanSampleRate(chanBW);
+
+    % Конфигурация канала
+    speedOfLight = physconst('lightspeed');
+    chanBase = wlanTGaxChannel;
+    chanBase.DelayProfile = delayProfile;
+    chanBase.NumTransmitAntennas = numTx;
+    chanBase.NumReceiveAntennas = numRx;
+    chanBase.SampleRate = sampleRate;
+    chanBase.CarrierFrequency = carrierFrequency;
+    chanBase.ChannelBandwidth = chanBW;
+    chanBase.PathGainsOutputPort = true;
+    chanBase.NormalizeChannelOutputs = false;
+
+    chBaseInfo = info(chanBase);
+    chDelay = chBaseInfo.ChannelFilterDelay;
+    numPaths = size(chBaseInfo.PathDelays, 2);
+end
+
+./src/customPosGen.m
+
+function [positionSTA, positionAP, distance] = customPosGen(numAPs, numIterations, numSNR)
+    % Генерирует позиции STA и AP для симуляции
+    % numAPs - количество точек доступа
+    % numIterations - количество итераций
+    % numSNR - количество значений ОСШ
+    % Возвращает:
+    % positionSTA - позиции STA [2, numIterations, numSNR]
+    % positionAP - позиции AP [2, numAPs, numIterations, numSNR]
+    % distance - расстояния от STA до AP [numAPs, numIterations]
+
+    positionSTA = zeros(2, numIterations, numSNR);
+    positionAP = zeros(2, numAPs, numIterations, numSNR);
+    distance = zeros(numAPs, numIterations);
+    
+    for iter = 1:numIterations
+        % Генерация случайной позиции STA в области 10x10 м
+        staPos = 10 * rand(2, 1); % Координаты [x, y] в диапазоне [0, 10]
+
+        % Генерация позиций AP, гарантирующая их различие
+        apPos = zeros(2, numAPs);
+        minSeparation = 1; % Минимальное расстояние между AP (в метрах)
+        for ap = 1:numAPs
+            validPos = false;
+            while ~validPos
+                candidatePos = 10 * rand(2, 1); % Случайная позиция
+                % Проверка расстояния до уже сгенерированных AP
+                if ap == 1 || all(vecnorm(apPos(:, 1:ap-1) - candidatePos) >= minSeparation)
+                    apPos(:, ap) = candidatePos;
+                    validPos = true;
+                end
+            end
+        end
+
+        % Вычисление расстояний от STA до AP
+        dist = vecnorm(apPos - staPos);
+        
+        % Сохранение результатов
+        distance(:, iter) = dist;
+        positionSTA(:, iter, 1) = staPos;
+        positionAP(:, :, iter, 1) = apPos;
+
+        % Копирование для всех SNR
+        for isnr = 1:numSNR
+            positionSTA(:, iter, isnr) = positionSTA(:, iter, 1);
+            positionAP(:, :, iter, isnr) = positionAP(:, :, iter, 1);
+        end
+    end
+end
+./src/generateAllPositions.m
+
+function [positionSTA, positionAP, distance] = generateAllPositions(numAPs, numIterations, numSNR)
+%generateAllPositions Generate STA and APs positions for multiple iterations and SNR
+%
+%   [POSITIONSTA, POSITIONAP, DISTANCE] = generateAllPositions(NUMAPS, NUMITERATIONS, NUMSNR)
+%   generates positions for a station (STA) and NUMAPS access points (APs) randomly
+%   in the xy-plane with X and Y positions in meters, repeated for NUMITERATIONS
+%   iterations and NUMSNR SNR levels.
+%
+%   POSITIONSTA is a matrix of size 2-by-NUMITERATIONS-by-NUMSNR, representing
+%   the 2-dimensional position of the STA (fixed at origin [0; 0]).
+%
+%   POSITIONAP is a matrix of size 2-by-NUMAPS-by-NUMITERATIONS-by-NUMSNR,
+%   representing the 2-dimensional positions of the APs.
+%
+%   DISTANCE is a matrix of size NUMAPS-by-NUMITERATIONS, representing the
+%   distances between the STA and APs in meters.
+%
+%   NUMAPS is the number of APs in the network.
+%   NUMITERATIONS is the number of simulation iterations.
+%   NUMSNR is the number of SNR levels.
+%
+%   Copyright 2025 The MathWorks, Inc.
+
+% Инициализация выходных массивов
+positionSTA = zeros(2, numIterations, numSNR);
+positionAP = zeros(2, numAPs, numIterations, numSNR);
+distance = zeros(numAPs, numIterations);
+
+for iter = 1:numIterations
+    % Генерация позиций для одной итерации
+    % STA всегда в начале координат
+    staPos = [0; 0];
+    
+    % Генерация углов в радианах в пределах [0: 2*pi] с сектором 2*pi/numAPs
+    phi = (0:numAPs-1)*(2*pi/numAPs) + rand(1, numAPs)*2*pi/(2*numAPs);
+    
+    % Генерация радиусов в метрах из равномерного распределения на интервале [2, 20]
+    minRadius = 2; % Минимальное расстояние до AP (м)
+    maxRadius = 20; % Максимальное расстояние до AP (м)
+    radius = minRadius + (maxRadius - minRadius) * rand(1, numAPs); % Радиус в метрах
+    
+    % Преобразование из полярных координат в декартовы
+    [x, y] = pol2cart(phi, radius);
+    
+    % Позиции AP
+    apPos = [x; y]; % X и Y позиции в метрах
+    
+    % Проверка минимального расстояния между AP
+    minSeparation = 2; % Минимальное расстояние между AP (м)
+    for i = 1:numAPs
+        for j = i+1:numAPs
+            dist = norm(apPos(:, i) - apPos(:, j));
+            if dist < minSeparation
+                % Перегенерировать позицию j-го AP
+                valid = false;
+                while ~valid
+                    newPhi = rand * 2 * pi;
+                    newRadius = minRadius + (maxRadius - minRadius) * rand;
+                    [newX, newY] = pol2cart(newPhi, newRadius);
+                    newPos = [newX; newY];
+                    valid = true;
+                    for k = 1:numAPs
+                        if k ~= j && norm(newPos - apPos(:, k)) < minSeparation
+                            valid = false;
+                            break;
+                        end
+                    end
+                    if valid
+                        apPos(:, j) = newPos;
+                        radius(j) = newRadius;
+                    end
+                end
+            end
+        end
+    end
+    
+    % Проверка размеров
+    if size(apPos, 2) ~= numAPs || length(radius) ~= numAPs
+        error('Некорректные размеры: apPos=%s, radius=%s', ...
+              mat2str(size(apPos)), mat2str(size(radius)));
+    end
+    
+    % Сохранение результатов
+    distance(:, iter) = radius(:); % Убедимся, что radius - столбец
+    positionSTA(:, iter, 1) = staPos;
+    positionAP(:, :, iter, 1) = apPos;
+    
+    % Копирование позиций для всех SNR
+    for isnr = 1:numSNR
+        positionSTA(:, iter, isnr) = positionSTA(:, iter, 1);
+        positionAP(:, :, iter, isnr) = positionAP(:, :, iter, 1);
+    end
+end
+end
+./src/generatePositions.m
+
+function [positionSTA, positionAP, distance] = generatePositions(numAPs, numIterations, numSNR)
+    positionSTA = zeros(2, numIterations, numSNR);
+    positionAP = zeros(2, numAPs, numIterations, numSNR);
+    distance = zeros(numAPs, numIterations);
+    
+    for iter = 1:numIterations
+        [positionSTA(:, iter, 1), positionAP(:, :, iter, 1), distanceAllAPs] = heGeneratePositions(numAPs);
+        distance(:, iter) = distanceAllAPs;
+        for isnr = 1:numSNR
+            positionSTA(:, iter, isnr) = positionSTA(:, iter, 1);
+            positionAP(:, :, iter, isnr) = positionAP(:, :, iter, 1);
+        end
+    end
+end
+
+./src/getMethodString.m
+
+function methodStr = getMethodString(useMusic)
+    if useMusic
+        methodStr = 'MUSIC';
+    else
+        methodStr = 'Без MUSIC';
+    end
+end
+
+./src/heAoAPositionEstimate.m
+
+function positionSTAEst = heAoAPositionEstimate(positionAP, aoaEst)
+    % Оценивает позицию STA только на основе углов прихода (AoA)
+    % positionAP - позиции AP [2, numAPs]
+    % aoaEst - оценённые углы прихода [numAPs, numPaths] в градусах
+    % Возвращает positionSTAEst [2, 1] - координаты STA
+
+    numAPs = size(positionAP, 2);
+    positionSTAEst = nan(2, 1);
+
+    if numAPs < 2 || any(isnan(aoaEst(:)))
+        warning('Для позиционирования по AoA требуется минимум 2 точки доступа с валидными углами');
+        return;
+    end
+
+    % Начальное приближение - случайная точка в области
+    lb = [-30; -30]; % Расширенная нижняя граница
+    ub = [30; 30];   % Расширенная верхняя граница
+    x0 = lb + rand(2, 1) .* (ub - lb);
+
+    % Функция ошибки: сумма квадратов угловых отклонений
+    errorFunc = @(x) sum(arrayfun(@(i) (atan2(x(2) - positionAP(2, i), x(1) - positionAP(1, i)) * 180/pi - aoaEst(i, 1)).^2, 1:numAPs));
+
+    % Оптимизация с настройками
+    options = optimoptions('fmincon', 'Display', 'off', 'Algorithm', 'sqp', 'MaxIterations', 1000, 'TolFun', 1e-6);
+    try
+        xOpt = fmincon(errorFunc, x0, [], [], [], [], lb, ub, [], options);
+        positionSTAEst = xOpt;
+        disp(['Оценённая позиция STA: ', mat2str(positionSTAEst')]);
+        disp(['Углы прихода aoaEst: ', mat2str(aoaEst(:, 1)')]);
+    catch e
+        warning('Ошибка оптимизации: %s', e.message);
+        positionSTAEst = nan(2, 1);
+    end
+
+    % Отладка
+    if any(isnan(positionSTAEst))
+        disp('Невозможно определить позицию STA. Проверьте aoaEst:');
+        disp(aoaEst(:, 1));
+    end
+end
+./src/heRangingAoAEstimate.m
+
+function aoa = heRangingAoAEstimate(chanEst, carrierFrequency, numPaths)
+% Оценка углов прихода (AoA) через MUSIC
+% chanEst: [numSubcarriers × numRx × numSTS], numSTS обычно =1 для AoA
+% carrierFrequency: несущая частота (Гц)
+% numPaths: число возвращаемых углов
+
+    %=== 1) Параметры антенной решётки ===%
+    c = physconst('LightSpeed');          
+    lambda = c / carrierFrequency;        % длина волны
+    d = lambda/2;                         % шаг между антеннами
+
+    %=== 2) Steering-векторы ===%
+    numRx = size(chanEst,2);
+    theta = -90:0.1:90;                   % разрешение 0.1° — чуть быстрее, чем 0.05°
+    % exp(-j·2π·d/λ·m·sinθ) для m=0..numRx-1
+    steeringVectors = exp(-1j*2*pi*(d/lambda)*(0:numRx-1)' * sind(theta));
+
+    %=== 3) Оценка корреляционной матрицы ===%
+    R = zeros(numRx);
+    Nsub = size(chanEst,1);
+    for sc = 1:Nsub
+        Hsc = squeeze(chanEst(sc,:,1)).'; % [numRx×1], берем первый поток
+        R = R + (Hsc * Hsc');              % аккумулируем энергию
+    end
+    R = R / Nsub;                        % усреднение
+
+    %=== 4) EVD и отделение шумового подпространства ===%
+    [V, D] = eig(R);
+    [~, idx] = sort(diag(D), 'descend');
+    V = V(:, idx);
+    En = V(:, numPaths+1:end);          % шумовое подпространство
+
+    %=== 5) Вычисление MUSIC-спектра ===%
+    Pmusic = zeros(1, numel(theta));
+    for i = 1:numel(theta)
+        a = steeringVectors(:, i);
+        denom = real(a' * (En*En') * a);
+        Pmusic(i) = 1 / max(eps, denom); % защита от деления на ноль
+    end
+
+    %=== 6) Поиск пиков в спектре ===%
+    [pks, locs] = findpeaks(Pmusic, ...
+        'SortStr','descend', ...
+        'NPeaks',numPaths, ...
+        'MinPeakHeight', max(Pmusic)/10);
+    if isempty(locs)
+        warning('MUSIC peaks not found, returning zeros');
+        aoa = zeros(1, numPaths);
+    else
+        aoa = theta(locs);              % углы в градусах
+        % если пиков меньше, чем numPaths — дополняем нулями
+        aoa = [aoa, zeros(1, max(0, numPaths-numel(aoa)))];
+    end
+end
+
+
+
+./src/heRangingAoAEstimateESPRIT.m
+
+function aoa = heRangingAoAEstimateESPRIT(chanEst, numRx, carrierFrequency, numPaths)
+    % Оценивает углы прихода (AoA) с использованием алгоритма ESPRIT
+    % chanEst - канальные оценки [numSubcarriers, numRx, numSTS]
+    % numRx - количество приёмных антенн
+    % carrierFrequency - несущая частота (Гц)
+    % numPaths - количество путей
+    % Возвращает aoa - углы в градусах [1, numPaths]
+
+    % Проверка входных данных
+    if numRx < 2
+        error('Для AoA требуется минимум 2 приёмные антенны, получено numRx=%d', numRx);
+    end
+    numPaths = min(numPaths, numRx - 1); % Ограничение числа путей
+    disp(['Размер chanEst: ', mat2str(size(chanEst))]);
+    disp(['numRx: ', num2str(numRx), ', carrierFrequency: ', num2str(carrierFrequency), ', numPaths: ', num2str(numPaths)]);
+    if any(isnan(chanEst(:)))
+        warning('chanEst содержит NaN');
+    end
+
+    % Параметры антенной решётки
+    lambda = physconst('LightSpeed') / carrierFrequency; % Длина волны
+    d = lambda / 2; % Расстояние между антеннами
+
+    % Формирование корреляционной матрицы
+    R = zeros(numRx, numRx);
+    for sc = 1:size(chanEst, 1)
+        H = squeeze(chanEst(sc, :, :));
+        R = R + H * H';
+    end
+    R = R / size(chanEst, 1);
+    R = R + 1e-6 * eye(numRx); % Регуляризация
+
+    % Отладка
+    disp('Корреляционная матрица R:');
+    disp(R);
+    if rank(R) < numRx
+        warning('Корреляционная матрица вырождена, ранг=%d, ожидается %d', rank(R), numRx);
+    end
+
+    % Собственное разложение
+    [V, D] = eig(R);
+    [~, idx] = sort(diag(D), 'descend');
+    V = V(:, idx);
+    Es = V(:, 1:numPaths); % Сигнальное подпространство
+
+    % Разделение на подмассивы
+    E1 = Es(1:end-1, :); % Первые M-1 строк
+    E2 = Es(2:end, :);    % Последние M-1 строк
+
+    % Вычисление матрицы вращения Psi
+    Psi = pinv(E1) * E2; % Псевдообратная матрица
+
+    % Собственные значения Psi
+    [~, D] = eig(Psi);
+    phi = angle(diag(D)); % Фазовые сдвиги
+
+    % Преобразование фаз в углы
+    aoa = asin(phi * lambda / (2 * pi * d)) * 180 / pi; % В градусах
+    disp(['Найдены углы (ESPRIT): ', mat2str(aoa')]);
+
+    % Убедимся, что возвращаем numPaths углов
+    aoa = aoa(1:numPaths);
+    if length(aoa) < numPaths
+        aoa = [aoa; zeros(numPaths - length(aoa), 1)];
+    end
+end
+./src/heRangingTOAEstimateWithoutMusic.m
+
+function fracDelay = heRangingTOAEstimateWithoutMusic(chanEstActiveSC, activeFFTIndices, fftLength, sampleRate)
+    chanEstMean = mean(chanEstActiveSC, [2, 3]);
+    chanEstFull = zeros(fftLength, 1);
+    chanEstFull(activeFFTIndices) = chanEstMean;
+    impulseResponse = ifft(ifftshift(chanEstFull));
+    [~, idx] = max(abs(impulseResponse));
+    fracDelay = (idx - 1) / sampleRate;
+end
+
+./src/performTrilateration.m
+
+function [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, methodStr,useAoA)
+    % Выполняет трилатерацию (ToA) или AoA-позиционирование для оценки позиции STA
+    % numAPs - количество точек доступа
+    % numIterations - количество итераций
+    % snrRange - диапазон ОСШ
+    % positionAP - позиции AP [2, numAPs, numIterations, numSNR]
+    % positionSTA - истинные позиции STA [2, numIterations, numSNR]
+    % distEst - оценённые расстояния [numAPs, numIterations, numSNR]
+    % aoaEst - оценённые углы [numAPs, numIterations, numSNR, numPaths]
+    % methodStr - строка метода
+    % useAoA - логический флаг, true для режима только AoA
+
+    numSNR = numel(snrRange);
+    
+    % Проверка размеров
+    if size(distEst, 1) ~= numAPs || size(positionAP, 2) ~= numAPs
+        error('Размеры distEst или positionAP не соответствуют numAPs');
+    end
+
+    positionSTAEst = nan(2, numIterations, numSNR);
+    RMSE = nan(numIterations, numSNR);
+    
+    for isnr = 1:numSNR
+        for i = 1:numIterations
+            if useAoA
+                % Режим AoA: используем только углы прихода
+                positionSTAEst(:, i, isnr) = heAoAPositionEstimate(squeeze(positionAP(:, :, i, isnr)), ...
+                                                                   squeeze(aoaEst(:, i, isnr, :)));
+            else
+                % Режим трилатерации: только ToA
+                if sum(~isnan(distEst(:, i, isnr))) >= 3
+                    positionSTAEst(:, i, isnr) = hePositionEstimate(squeeze(positionAP(:, :, i, isnr)), ...
+                                                                    squeeze(distEst(:, i, isnr)));
+                end
+            end
+            % Вычисление RMSE
+            if ~any(isnan(positionSTAEst(:, i, isnr)))
+                RMSE(i, isnr) = sqrt(mean((positionSTAEst(:, i, isnr) - positionSTA(:, i, isnr)).^2));
+            end
+        end
+        validRMSE = RMSE(:, isnr);
+        validRMSE = validRMSE(~isnan(validRMSE));
+        if ~isempty(validRMSE)
+            posEr = mean(validRMSE);
+            disp(['Для ОСШ = ', num2str(snrRange(isnr)), ' дБ, Метод: ', methodStr, ', Среднеквадратичная ошибка позиционирования = ', num2str(posEr), ' м.'])
+        else
+            disp(['Для ОСШ = ', num2str(snrRange(isnr)), ' дБ Нет валидных данных ', methodStr]);
+        end
+    end
+end
+
+./src/runPositioningAoA.m
+
+function runPositioningAoA(numIter, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numEstAPs, delayProfile, carrierFrequency, sampleTime, useAoAMode, useTDoAMode, useFDoAMode)
+    % Запуск симуляции для MUSIC и ESPRIT
+    methods = {'MUSIC', 'ESPRIT'};
+    rmseResults = zeros(length(snrRange), length(methods));
+
+    for methodIdx = 1:length(methods)
+        method = methods{methodIdx};
+        fprintf('Запуск симуляции с методом: %s\n', method);
+
+        % Инициализация массивов для хранения результатов
+        positionError = zeros(numIter, length(snrRange));
+        allDistanceEst = zeros(numAPs, numIter, length(snrRange));
+        allAoaEst = zeros(numAPs, 2, numIter, length(snrRange));
+        allPositionSTA = zeros(2, numIter, length(snrRange));
+        allPositionAP = zeros(2, numAPs, numIter, length(snrRange));
+
+        for isnr = 1:length(snrRange)
+            snr = snrRange(isnr);
+            fprintf('Для ОСШ = %d дБ\n', snr);
+
+            for iter = 1:numIter
+                % Генерация позиций
+                [positionSTA, positionAP] = generateAllPositions(iter, numAPs, snr);
+
+                % Сохранение позиций
+                allPositionSTA(:, iter, isnr) = positionSTA;
+                allPositionAP(:, :, iter, isnr) = positionAP;
+
+                % Симуляция
+                [distanceEst, aoaEst] = simulateRanging(positionSTA, positionAP, snr, chanBW, numTx, numRx, numSTS, numAPs, delayProfile, carrierFrequency, sampleTime, useAoAMode, useTDoAMode, useFDoAMode, method);
+
+                % Сохранение результатов
+                allDistanceEst(:, iter, isnr) = distanceEst;
+                allAoaEst(:, :, iter, isnr) = aoaEst;
+
+                % Оценка позиции
+                positionSTAEst = heAoAPositionEstimate(positionAP, aoaEst);
+
+                % Ошибка
+                positionError(iter, isnr) = sqrt(sum((positionSTA - positionSTAEst).^2));
+
+                % Визуализация (для последней итерации)
+                if iter == numIter
+                    visualizeAoAPositioning(positionSTA, positionAP, positionSTAEst, aoaEst, method);
+                end
+            end
+
+            rmse = sqrt(mean(positionError(:, isnr).^2));
+            rmseResults(isnr, methodIdx) = rmse;
+            fprintf('Для ОСШ = %d дБ, Метод: %s, Среднеквадратичная ошибка позиционирования = %.4f м.\n', snr, method, rmse);
+        end
+    end
+
+    % Вывод сравнительной таблицы
+    fprintf('\nСравнительная таблица RMSE (м):\n');
+    fprintf('SNR (дБ) | MUSIC  | ESPRIT\n');
+    fprintf('---------|--------|--------\n');
+    for isnr = 1:length(snrRange)
+        fprintf('%d       | %.4f | %.4f\n', snrRange(isnr), rmseResults(isnr, 1), rmseResults(isnr, 2));
+    end
+end
+./src/runPositioningSimulation_UNUSED.m
+
+% function runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic,useAoA)
+%     % Основная функция симуляции позиционирования
+%     % useAoAMode - логический флаг, true для режима только AoA
+% 
+%     % Настройка путей поиска
+%     setupSearchPaths();
+% 
+%     % Конфигурация сигналов и канала
+%     [cfgSTABase, cfgAPBase, ofdmInfo, sampleRate, chanBase, chDelay, numPaths, speedOfLight] = ...
+%         configureWaveformAndChannel(numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency);
+% 
+%     % Генерация позиций STA и AP
+%     [positionSTA, positionAP, distance] = generatePositions(numAPs, numIterations, numel(snrRange));
+% 
+%     % Определение строки метода
+%     methodStr = getMethodString(useMusic);
+% 
+%     % Симуляция ranging
+%     [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRange, cfgSTABase, cfgAPBase, ...
+%         chanBase, ofdmInfo, sampleRate, chDelay, numPaths,numRx,speedOfLight, distance,delayULDL, useMusic, useAoA, methodStr);
+% 
+%     % Трилатерация или AoA-позиционирование
+%     [positionSTAEst, RMSE] = performTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTA, distEst, aoaEst, methodStr, useAoA);
+% 
+%     % Визуализация результатов
+%     visualizeTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTAEst, distEst, methodStr);
+% 
+%     % Очистка путей поиска
+%     cleanupSearchPaths();
+% end
+./src/setupSearchPaths.m
+
+function setupSearchPaths()
+    addpath('libs');
+    currentFolder = fileparts(mfilename('fullpath'));
+    addpath(currentFolder);
+end
+
+function cleanupSearchPaths()
+    rmpath('libs');
+    currentFolder = fileparts(mfilename('fullpath'));
+    rmpath(currentFolder);
+end
+
+./src/simulateRanging.m
+
+function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRange, cfgSTABase, cfgAPBase, ...
+    chanBase, ofdmInfo, sampleRate, chDelay, numPaths,numRx,carrierFrequency, speedOfLight, distance, delayULDL,useMusic, useAoA, methodStr)
+    numSNR = numel(snrRange);
+    distEst = nan(numAPs, numIterations, numSNR);
+    aoaEst = nan(numAPs, numIterations, numSNR, numPaths);
+    per = zeros(numSNR, 1);
+    
+    for isnr = 1:numSNR
+        chan = chanBase;
+        cfgAP = cfgAPBase;
+        cfgSTA = cfgSTABase;
+
+        rangingError = 0;
+        failedPackets = 0;
+
+        stream = RandStream('combRecursive', 'Seed', 123456);
+        stream.Substream = isnr;
+        RandStream.setGlobalStream(stream);
+
+        snrVal = snrRange(isnr) - 10*log10(ofdmInfo.FFTLength/ofdmInfo.NumTones);
+
+        localDistEst = nan(numAPs, numIterations);
+        localAoaEst = nan(numAPs, numIterations, numPaths);
+
+        for iter = 1:numIterations
+            delay = distance(:, iter)/speedOfLight;
+            sampleDelay = delay*sampleRate;
+
+            for ap = 1:numAPs
+                linkType = ["Uplink", "Downlink"];
+                todUL = randsrc(1, 1, 0:1e-9:1e-6);
+                numLinks = numel(linkType);
+                txTime = zeros(1, numLinks);
+
+                for l = 1:numLinks
+                    if linkType(l) == "Uplink"
+                        cfgSTA.UplinkIndication = 1;
+                        numOctets = numSecureHELTFOctets(cfgSTA);
+                        cfgSTA.User{1}.SecureHELTFOctets = dec2hex(randsrc(1, 2*numOctets(1), (0:15)))';
+                        cfg = cfgSTA;
+                    else
+                        numOctets = numSecureHELTFOctets(cfgAP{ap});
+                        cfgAP{ap}.User{1}.SecureHELTFOctets = dec2hex(randsrc(1, 2*numOctets(1), (0:15)))';
+                        cfg = cfgAP{ap};
+                    end
+
+                    reset(chan);
+                    tx = heRangingWaveformGenerator(cfg);
+                    txDelay = heDelaySignal(tx,sampleDelay(ap));
+                    txMultipath = chan([txDelay; zeros(50, cfg.NumTransmitAntennas)]);
+                    rx = awgn(txMultipath, snrVal);
+                    [chanEstActiveSC, integerOffset] = heRangingSynchronize(rx, cfg);
+
+                    if ~isempty(chanEstActiveSC)
+                        if useMusic
+                            fracDelay = heRangingTOAEstimate(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
+                                                             ofdmInfo.FFTLength, sampleRate, numPaths);
+                        else
+                            fracDelay = toAEstUpdated(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
+                                                     ofdmInfo.FFTLength, sampleRate);
+                        end
+                        integerOffset = integerOffset - chDelay;
+                        intDelay = integerOffset/sampleRate;
+                        txTime(l) = intDelay + fracDelay;
+                    else
+                        txTime(l) = NaN;
+                    end
+                end
+
+                if ~any(isnan(txTime))
+                    toaUL = todUL + txTime(1);
+                    todDL = toaUL + delayULDL;
+                    toaDL = todDL + txTime(2);
+                    rtt = (toaDL - todUL) - (todDL - toaUL);
+                    localDistEst(ap, iter) = (rtt/2)*speedOfLight;
+                    rangingError = rangingError + abs(distance(ap, iter) - localDistEst(ap, iter));
+                else
+                    localDistEst(ap, iter) = NaN;
+                    failedPackets = failedPackets + 1;
+                end
+
+                if useAoA && ~isempty(chanEstActiveSC)
+                    % localAoaEst(ap, iter, :) = heRangingAoAEstimate(chanEstActiveSC, numRx, carrierFrequency, numPaths);
+                    localAoaEst(ap, iter, :) = heRangingAoAEstimateESPRIT(chanEstActiveSC, numRx, carrierFrequency, numPaths);
+                end
+            end
+        end
+
+        distEst(:, :, isnr) = localDistEst;
+        aoaEst(:, :, isnr, :) = localAoaEst;
+        mae = rangingError/((numAPs*numIterations) - failedPackets);
+        per(isnr) = failedPackets/(numAPs*numIterations);
+        if per(isnr) > 0.01
+            warning('wlan:discardPacket', 'At SNR = %d dB, %d%% of packets were discarded', snrRange(isnr), 100*per(isnr));
+        end
+        disp(['Для ОСШ = ', num2str(snrRange(isnr)), ' дБ, Метод: ', methodStr, ', Ошибка определения дистанции = ', num2str(mae), ' м.'])
+        if useAoA
+            disp(['Оценённые углы прихода (AoA) для ОСШ = ', num2str(snrRange(isnr)), ' дБ:']);
+            disp(squeeze(aoaEst(:, :, isnr, :)));
+        end
+    end
+end
+
+./src/toAEstUpdated.m
+
+function fracDelay = toAEstUpdated(chanEstActiveSC, activeFFTIndices, fftLength, sampleRate)
+    chanEstMean = mean(chanEstActiveSC, [2, 3]);
+    chanEstFull = zeros(fftLength, 1);
+    chanEstFull(activeFFTIndices) = chanEstMean;
+    impulseResponse = ifft(ifftshift(chanEstFull));
+    absImpulse = abs(impulseResponse);
+    noiseThreshold = mean(absImpulse(end-fftLength/4:end)) * 3;
+    validPeaks = absImpulse > noiseThreshold;
+    firstPeakIdx = find(validPeaks, 1, 'first');
+    
+    if isempty(firstPeakIdx)
+        warning('Первый пик не найден, возвращается fracDelay = 0');
+        fracDelay = 0;
+    else
+        window = max(1, firstPeakIdx-2):min(length(absImpulse), firstPeakIdx+2);
+        [~, relIdx] = max(absImpulse(window));
+        fracDelay = (window(relIdx) - 1) / sampleRate;
+    end
+end
+
+./src/visualizeAoAPositioning.m
+
+function visualizeAoAPositioning(numAPs, numIterations, snrRange, positionAP, positionSTA, positionSTAEst, aoaEst, methodStr)
+    % Визуализирует позиционирование по AoA
+    % numAPs - количество точек доступа
+    % numIterations - количество итераций
+    % snrRange - диапазон ОСШ
+    % positionAP - позиции AP [2, numAPs, numIterations, numSNR]
+    % positionSTA - истинные позиции STA [2, numIterations, numSNR]
+    % positionSTAEst - оценённые позиции STA [2, numIterations, numSNR]
+    % aoaEst - оценённые углы [numAPs, numIterations, numSNR, numPaths]
+    % methodStr - строка метода
+
+    numSNR = numel(snrRange);
+    for isnr = 1:numSNR
+        % Найти последнюю итерацию с валидными данными
+        validIter = find(~any(isnan(positionSTAEst(:, :, isnr)), 1), 1, 'last');
+        if isempty(validIter)
+            disp(['Нет корректных данных для ОСШ ', num2str(snrRange(isnr)), ' дБ, Метод: ', methodStr]);
+            continue;
+        end
+
+        figure('Name', ['Позиционирование по AoA, ОСШ = ', num2str(snrRange(isnr)), ' дБ']);
+        hold on;
+        grid on;
+        axis equal;
+
+        % Истинная позиция STA
+        plot(positionSTA(1, validIter, isnr), positionSTA(2, validIter, isnr), 'go', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Истинная позиция STA');
+
+        % Оценённая позиция STA
+        plot(positionSTAEst(1, validIter, isnr), positionSTAEst(2, validIter, isnr), 'rx', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Оценённая позиция STA');
+
+        % Позиции AP и лучи AoA
+        apPos = squeeze(positionAP(:, :, validIter, isnr));
+        angles = squeeze(aoaEst(:, validIter, isnr, 1));
+        maxRange = 30; % Максимальная длина лучей для визуализации (в метрах)
+        for i = 1:numAPs
+            % Позиция AP
+            plot(apPos(1, i), apPos(2, i), 'bs', 'MarkerSize', 8, 'LineWidth', 2, 'DisplayName', ['AP ', num2str(i)]);
+
+            % Луч AoA
+            theta = deg2rad(angles(i));
+            endX = apPos(1, i) + maxRange * cos(theta);
+            endY = apPos(2, i) + maxRange * sin(theta);
+            plot([apPos(1, i), endX], [apPos(2, i), endY], 'b--', 'LineWidth', 1, 'HandleVisibility', 'off');
+        end
+
+        xlabel('X (м)');
+        ylabel('Y (м)');
+        title(['Позиционирование по AoA, ОСШ = ', num2str(snrRange(isnr)), ' дБ, Метод: ', methodStr]);
+        legend('show');
+        hold off;
+    end
+end
+./src/visualizeTrilateration.m
+
+function visualizeTrilateration(numAPs, numIterations, snrRange, positionAP, positionSTAEst, distEst, methodStr)
+    numSNR = numel(snrRange);
+    for isnr = 1:numSNR
+        validIter = find(sum(~isnan(distEst(:, :, isnr)), 1) >= 3, 1, 'last');
+        if ~isempty(validIter)
+            hePlotTrilaterationCircles(squeeze(positionAP(:, :, validIter, isnr)), ...
+                                       squeeze(positionSTAEst(:, validIter, isnr)), ...
+                                       squeeze(distEst(:, validIter, isnr)), ...
+                                       snrRange(isnr), validIter);
+        else
+            disp(['Нет корректных данных для ОСШ ', num2str(snrRange(isnr)), ' дБ, Метод: ', methodStr]);
+        end
+    end
+end
+

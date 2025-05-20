@@ -23,8 +23,9 @@ classdef PositioningGUI < matlab.apps.AppBase
         CarrierFrequencyEditField
         DelayULDLLabel
         DelayULDLEditField
-        UseMusicCheckBox % Новый чекбокс
+        UseMusicCheckBox
         UseAoACheckBox
+        AoAMethodDropDown
         RunSimulationButton
     end
 
@@ -32,6 +33,7 @@ classdef PositioningGUI < matlab.apps.AppBase
         function startupFcn(app)
             app.ChanBWDropDown.Items = {'CBW20', 'CBW40', 'CBW80', 'CBW160'};
             app.DelayProfileDropDown.Items = {'Model-A', 'Model-B', 'Model-C', 'Model-D', 'Model-E'};
+            app.AoAMethodDropDown.Items = {'MUSIC', 'ESPRIT'};
         end
 
         function RunSimulationButtonPushed(app, event)
@@ -48,9 +50,10 @@ classdef PositioningGUI < matlab.apps.AppBase
             delayProfile = app.DelayProfileDropDown.Value;
             carrierFrequency = app.CarrierFrequencyEditField.Value;
             delayULDL = app.DelayULDLEditField.Value;
-            useMusic = app.UseMusicCheckBox.Value; % Передаём значение чекбокса
+            useMusic = app.UseMusicCheckBox.Value;
             useAoA = app.UseAoACheckBox.Value;
-            runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic, useAoA);
+            aoaMethod = app.AoAMethodDropDown.Value;
+            runPositioningSimulation(numIterations, snrRange, numAPs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL, useMusic, useAoA, aoaMethod);
         end
     end
 
@@ -64,7 +67,7 @@ classdef PositioningGUI < matlab.apps.AppBase
 
             % SNR Range
             app.SNRRangeLabel = uilabel(app.UIFigure, 'Position', [50 440 120 22], 'Text', 'Диапазон ОСШ (дБ)');
-            app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '30:5:45');
+            app.SNRRangeEditField = uieditfield(app.UIFigure, 'text', 'Position', [180 440 100 22], 'Value', '20:5:40');
 
             % Number of APs
             app.NumAPsLabel = uilabel(app.UIFigure, 'Position', [50 410 120 22], 'Text', 'Количество ТД');
@@ -102,10 +105,10 @@ classdef PositioningGUI < matlab.apps.AppBase
             app.DelayULDLLabel = uilabel(app.UIFigure, 'Position', [50 170 120 22], 'Text', 'Задержка ВЛ-НЛ (s)');
             app.DelayULDLEditField = uieditfield(app.UIFigure, 'numeric', 'Position', [180 170 100 22], 'Value', 1e-6);
 
-            % Чекбокс Use MUSIC
-            app.UseMusicCheckBox = uicheckbox(app.UIFigure, 'Position', [50 140 200 22], 'Text', 'Использование MUSIC', 'Value', true);
-            % Чекбокс Use AoA
-            app.UseAoACheckBox = uicheckbox(app.UIFigure, 'Position', [50 125 200 22], 'Text', 'Использование AoA', 'Value', false);
+            % Чекбоксы и выпадающий список
+            app.UseMusicCheckBox = uicheckbox(app.UIFigure, 'Position', [50 140 200 22], 'Text', 'ToA с MUSIC', 'Value', true);
+            app.UseAoACheckBox = uicheckbox(app.UIFigure, 'Position', [50 110 200 22], 'Text', 'Использовать AoA', 'Value', false);
+            app.AoAMethodDropDown = uidropdown(app.UIFigure, 'Position', [250 110 100 22], 'Items', {'MUSIC', 'ESPRIT'}, 'Value', 'MUSIC');
 
             % Run Simulation Button
             app.RunSimulationButton = uibutton(app.UIFigure, 'push', 'Position', [280 50 150 30], 'Text', 'Запустить симуляцию');

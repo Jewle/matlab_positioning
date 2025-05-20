@@ -3,6 +3,20 @@ function fracDelay = heRangingTOAEstimateWithoutMusic(chanEstActiveSC, activeFFT
     chanEstFull = zeros(fftLength, 1);
     chanEstFull(activeFFTIndices) = chanEstMean;
     impulseResponse = ifft(ifftshift(chanEstFull));
-    [~, idx] = max(abs(impulseResponse));
-    fracDelay = (idx - 1) / sampleRate;
+    absImpulse = abs(impulseResponse);
+
+    % Оценка шумового уровня из последней четверти сигнала
+    noiseThreshold = mean(absImpulse(end-fftLength/4:end)) * 3;
+    validPeaks = absImpulse > noiseThreshold;
+    firstPeakIdx = find(validPeaks, 1, 'first');
+
+    if isempty(firstPeakIdx)
+        warning('Первый пик не найден, возвращается fracDelay = 0');
+        fracDelay = 0;
+    else
+        % Уточнение пика в окне ±2 отсчёта
+        window = max(1, firstPeakIdx-2):min(length(absImpulse), firstPeakIdx+2);
+        [~, relIdx] = max(absImpulse(window));
+        fracDelay = (window(relIdx) - 1) / sampleRate;
+    end
 end
