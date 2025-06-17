@@ -48,3 +48,4 @@ function [positionSTAEst, RMSE] = performTrilateration(aoaEst,numAPs, numIterati
         end
     end
 end
+

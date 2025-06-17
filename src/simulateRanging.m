@@ -5,6 +5,8 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
     distEst = nan(numAPs, numIterations, numSNR);
     aoaEst = nan(numAPs, numIterations, numSNR, numPaths);
     per = zeros(numSNR, 1);
+    numLinks = 2; % Uplink и Downlink
+    fracDelayEst = nan(numAPs, numIterations, numSNR, numLinks); % Новый массив для fracDelay
 
     for isnr = 1:numSNR
         chan = chanBase;
@@ -56,8 +58,9 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
                                                                  ofdmInfo.FFTLength, sampleRate, numPaths);
                             else
                                 fracDelay = heRangingTOAEstimateWithoutMusic(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
-                                                         ofdmInfo.FFTLength, sampleRate);
+                                                                             ofdmInfo.FFTLength, sampleRate);
                             end
+                            fracDelayEst(ap, iter, isnr, l) = fracDelay; % Сохранение fracDelay
                             integerOffset = integerOffset - chDelay;
                             intDelay = integerOffset/sampleRate;
                             txTime(l) = intDelay + fracDelay;
@@ -73,12 +76,13 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
                         end
                     else
                         txTime(l) = NaN;
+                        fracDelayEst(ap, iter, isnr, l) = NaN; % Сохранение NaN при неудаче
                     end
                 end
 
                 if ~useAoA && ~any(isnan(txTime))
                     toaUL = todUL + txTime(1);
-                    todDL = toaUL + delayULDL;
+                    todDL = toaUL;
                     toaDL = todDL + txTime(2);
                     rtt = (toaDL - todUL) - (todDL - toaUL);
                     localDistEst(ap, iter) = (rtt/2)*speedOfLight;
@@ -106,5 +110,24 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
             disp(['Оценённые углы прихода (AoA) для ОСШ = ', num2str(snrRange(isnr)), ' дБ:']);
             disp(squeeze(aoaEst(:, :, isnr, :)));
         end
+    end
+
+    % Построение графиков fracDelay от итераций для каждого SNR
+    if ~useAoA
+        figure;
+        for isnr = 1:numSNR
+            subplot(numSNR, 1, isnr);
+            % Усреднение fracDelay по AP и каналам (Uplink/Downlink) для каждой итерации
+            meanFracDelay = nanmean(fracDelayEst(:, :, isnr, :), [1, 4]); % Усреднение по AP и каналам
+            meanFracDelay = squeeze(meanFracDelay); % Размер [numIterations]
+            plot(1:numIterations, meanFracDelay * 1e9, '-o'); % Перевод в наносекунды
+            xlabel('Итерация');
+            ylabel('fracDelay (нс)');
+            title(['SNR = ', num2str(snrRange(isnr)), ' дБ']);
+            grid on;
+        end
+        sgtitle('Дробная задержка в зависимости от итераций для различных SNR');
+    else
+        warning('Графики fracDelay не строятся, так как включен режим AoA');
     end
 end
