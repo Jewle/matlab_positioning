@@ -57,7 +57,7 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
                                 fracDelay = heRangingTOAEstimate(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
                                                                  ofdmInfo.FFTLength, sampleRate, numPaths);
                             else
-                                fracDelay = heRangingTOAEstimateWithoutMusic(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
+                                fracDelay = fakeToAEstimate(chanEstActiveSC, ofdmInfo.ActiveFFTIndices, ...
                                                                              ofdmInfo.FFTLength, sampleRate);
                             end
                             fracDelayEst(ap, iter, isnr, l) = fracDelay; % Сохранение fracDelay
@@ -120,7 +120,7 @@ function [distEst, aoaEst, per] = simulateRanging(numAPs, numIterations, snrRang
             % Усреднение fracDelay по AP и каналам (Uplink/Downlink) для каждой итерации
             meanFracDelay = nanmean(fracDelayEst(:, :, isnr, :), [1, 4]); % Усреднение по AP и каналам
             meanFracDelay = squeeze(meanFracDelay); % Размер [numIterations]
-            plot(1:numIterations, meanFracDelay * 1e9, '-o'); % Перевод в наносекунды
+            plot(1:numIterations, meanFracDelay, '-o'); % Перевод в наносекунды
             xlabel('Итерация');
             ylabel('fracDelay (нс)');
             title(['SNR = ', num2str(snrRange(isnr)), ' дБ']);
