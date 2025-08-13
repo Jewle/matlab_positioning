@@ -26,6 +26,7 @@ classdef PositioningGUI < matlab.apps.AppBase
         DelayULDLLabel
         DelayULDLEditField
         RunSimulationButton
+        RunAoAComparisonButton
     end
 
     methods (Access = private)
@@ -46,6 +47,21 @@ classdef PositioningGUI < matlab.apps.AppBase
             delayULDL = app.DelayULDLEditField.Value;
 
             runPositioningSimulation(numIterations, snrRange, numAPs, numSTAs, chanBW, numTx, numRx, numSTS, numLTFRepetitions, delayProfile, carrierFrequency, delayULDL);
+            rmpath('libs');
+        end
+
+        function RunAoAComparisonButtonPushed(app, event)
+            addpath('libs');
+            numIterations = app.NumIterationsEditField.Value;
+            snrRangeStr = app.SNRRangeEditField.Value;
+            snrRange = str2num(snrRangeStr);
+            numAPs = app.NumAPsEditField.Value;
+            chanBW = app.ChanBWDropDown.Value;
+            carrierFrequency = app.CarrierFrequencyEditField.Value;
+            % Use NumRx as array size for AoA at each AP
+            numSensors = app.NumRxEditField.Value;
+
+            runAoAPositioningComparison(numIterations, snrRange, numAPs, numSensors, chanBW, carrierFrequency);
             rmpath('libs');
         end
     end
@@ -169,8 +185,14 @@ classdef PositioningGUI < matlab.apps.AppBase
             % Run Simulation Button
             app.RunSimulationButton = uibutton(app.UIFigure, 'push');
             app.RunSimulationButton.ButtonPushedFcn = createCallbackFcn(app, @RunSimulationButtonPushed, true);
-            app.RunSimulationButton.Position = [280 50 150 30];
+            app.RunSimulationButton.Position = [120 50 150 30];
             app.RunSimulationButton.Text = 'Запустить симуляцию';
+
+            % Run AoA Comparison Button
+            app.RunAoAComparisonButton = uibutton(app.UIFigure, 'push');
+            app.RunAoAComparisonButton.ButtonPushedFcn = createCallbackFcn(app, @RunAoAComparisonButtonPushed, true);
+            app.RunAoAComparisonButton.Position = [330 50 190 30];
+            app.RunAoAComparisonButton.Text = 'Сравнить AoA (Bartlett/MUSIC/ESPRIT)';
         end
     end
 
